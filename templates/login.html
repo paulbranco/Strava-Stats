@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Connect — Strava Stats{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center login-bg">
+  <div class="card login-card shadow-lg border-0 text-center p-5">
+
+    <!-- Strava logo + wordmark -->
+    <div class="mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="#FC4C02">
+        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066l-2.084 4.116z"/>
+        <path d="M7.564 0L1 12.169h3.894l2.67-5.239 2.669 5.239h3.894L7.564 0z"/>
+      </svg>
+    </div>
+
+    <h1 class="h3 fw-bold mb-1">Strava Stats</h1>
+    <p class="text-muted mb-4">
+      Your personal activity dashboard — distance, time, elevation,<br>
+      and trends across every sport you do.
+    </p>
+
+    {% if error %}
+    <div class="alert alert-danger small py-2 mb-3" role="alert">
+      <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('auth') }}" class="btn btn-strava btn-lg d-flex align-items-center justify-content-center gap-2 w-100">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white">
+        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066l-2.084 4.116z"/>
+        <path d="M7.564 0L1 12.169h3.894l2.67-5.239 2.669 5.239h3.894L7.564 0z"/>
+      </svg>
+      Connect with Strava
+    </a>
+
+    <p class="text-muted mt-4 mb-0" style="font-size:.8rem">
+      Only your own data is accessed. Activities are cached locally for 1 hour.
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+# Environment variables (contains secrets)
+.env
+
+# Activity cache
+data/*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db

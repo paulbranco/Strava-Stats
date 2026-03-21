@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Strava Stats{% endblock %}
+
+{% block content %}
+<!-- Activity data blob consumed by dashboard.js -->
+<script id="activities-data" type="application/json">{{ activities_json | safe }}</script>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- ── Filter bar ─────────────────────────────────────────────────────── -->
+  <div class="card border-0 shadow-sm mb-4 p-3">
+
+    <!-- Year filter -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+      <span class="filter-label text-muted me-1">
+        <i class="bi bi-calendar3 me-1"></i>Year
+      </span>
+      <div id="year-filters" class="d-flex flex-wrap gap-2">
+        <button class="btn pill-btn active" data-year="all">All Years</button>
+        <!-- Year pills injected by JS -->
+      </div>
+    </div>
+
+    <!-- Sport filter -->
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <span class="filter-label text-muted me-1">
+        <i class="bi bi-activity me-1"></i>Sport
+      </span>
+      <div id="sport-filters" class="d-flex flex-wrap gap-2">
+        <button class="btn pill-btn active" data-sport="all">All Sports</button>
+        <!-- Sport pills injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Summary cards ──────────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-6 col-lg-3">
+      <div class="stat-card card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="stat-icon text-strava"><i class="bi bi-signpost-split"></i></div>
+          <div class="stat-value" id="stat-distance">—</div>
+          <div class="stat-label">Distance</div>
+          <div class="stat-sub" id="stat-distance-km"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+      <div class="stat-card card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="stat-icon text-strava"><i class="bi bi-clock"></i></div>
+          <div class="stat-value" id="stat-time">—</div>
+          <div class="stat-label">Moving Time</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+      <div class="stat-card card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="stat-icon text-strava"><i class="bi bi-graph-up"></i></div>
+          <div class="stat-value" id="stat-elevation">—</div>
+          <div class="stat-label">Elevation Gain</div>
+          <div class="stat-sub" id="stat-elevation-m"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+      <div class="stat-card card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="stat-icon text-strava"><i class="bi bi-trophy"></i></div>
+          <div class="stat-value" id="stat-count">—</div>
+          <div class="stat-label">Activities</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Charts ─────────────────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+
+    <!-- Weekly distance trend -->
+    <div class="col-12 col-xl-8">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-bar-chart-line me-1"></i>Weekly Distance (miles)
+          </h6>
+          <div class="chart-wrapper">
+            <canvas id="weekly-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sport breakdown donut -->
+    <div class="col-12 col-xl-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex flex-column">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-pie-chart me-1"></i>By Sport (distance)
+          </h6>
+          <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
+            <canvas id="sport-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Activity table ─────────────────────────────────────────────────── -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body px-0 pb-0">
+      <div class="d-flex align-items-center justify-content-between px-3 mb-2">
+        <h6 class="card-title text-muted mb-0">
+          <i class="bi bi-table me-1"></i>Activities
+          <span class="badge bg-secondary ms-1 fw-normal" id="table-count">0</span>
+        </h6>
+        <input id="search-input" type="search" class="form-control form-control-sm w-auto"
+               placeholder="Search name…" style="min-width:180px" />
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="activity-table">
+          <thead class="table-light">
+            <tr>
+              <th class="sortable" data-col="date">Date <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th>Name</th>
+              <th class="sortable" data-col="sport">Sport <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable text-end" data-col="distance">Distance <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable text-end" data-col="time">Time <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable text-end" data-col="pace">Pace / Speed <i class="bi bi-chevron-expand sort-icon"></i></th>
+              <th class="sortable text-end" data-col="elevation">Elev Gain <i class="bi bi-chevron-expand sort-icon"></i></th>
+            </tr>
+          </thead>
+          <tbody id="activity-tbody">
+            <tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div id="empty-state" class="text-center text-muted py-5 d-none">
+    <i class="bi bi-inbox display-4 d-block mb-3"></i>
+    No activities match the current filters.
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
