@@ -185,5 +185,33 @@ body {
   box-shadow: 0 0 0 .15rem rgba(252,76,2,.15);
 }
 
+/* Date range inputs */
+.date-filter-input {
+  border-radius: .4rem;
+  border-color: #dee2e6;
+  font-size: .85rem;
+  width: auto;
+  min-width: 140px;
+}
+.date-filter-input:focus {
+  border-color: var(--strava-orange);
+  box-shadow: 0 0 0 .15rem rgba(252,76,2,.15);
+}
+
+/* Pagination active color */
+.pagination .page-item.active .page-link {
+  background-color: var(--strava-orange);
+  border-color: var(--strava-orange);
+}
+.pagination .page-link {
+  color: var(--strava-orange);
+}
+.pagination .page-item.active .page-link,
+.pagination .page-link:hover {
+  color: #fff;
+  background-color: var(--strava-orange);
+  border-color: var(--strava-orange);
+}
+
 /* Misc */
 .table > :not(caption) > * > * { padding: .6rem 1rem; }

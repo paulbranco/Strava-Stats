@@ -138,11 +138,14 @@ const allActivities = JSON.parse(
   document.getElementById('activities-data').textContent
 );
 
-const selectedYears  = new Set();   // empty = all
+let dateStart = '';                 // 'YYYY-MM-DD' or ''
+let dateEnd   = '';                 // 'YYYY-MM-DD' or ''
 const selectedSports = new Set();   // empty = all
 let searchQuery = '';
 let sortColumn = 'date';
 let sortDir = 'desc';               // 'asc' | 'desc'
+let currentPage = 1;
+let pageSize = 25;
 
 let weeklyChart = null;
 let sportChart  = null;
@@ -151,10 +154,11 @@ let sportChart  = null;
 
 function getFilteredActivities() {
   return allActivities.filter(a => {
-    const year  = activityYear(a);
-    const sport = a.sport_type || a.type || '';
+    const sport     = a.sport_type || a.type || '';
+    const actDate   = (a.start_date_local || a.start_date || '').slice(0, 10);
 
-    if (selectedYears.size  > 0 && !selectedYears.has(year))   return false;
+    if (dateStart && actDate < dateStart) return false;
+    if (dateEnd   && actDate > dateEnd)   return false;
     if (selectedSports.size > 0 && !selectedSports.has(sport)) return false;
     if (searchQuery) {
       const name = (a.name || '').toLowerCase();
@@ -339,18 +343,28 @@ function sportBadgeClass(type) {
 function updateTable(activities) {
   const tbody = document.getElementById('activity-tbody');
   const sorted = sortActivities(activities);
+  const total  = sorted.length;
 
-  document.getElementById('table-count').textContent = sorted.length.toLocaleString();
+  document.getElementById('table-count').textContent = total.toLocaleString();
 
   const emptyState = document.getElementById('empty-state');
-  if (sorted.length === 0) {
+  if (total === 0) {
     tbody.innerHTML = '';
     emptyState.classList.remove('d-none');
+    renderPagination(0);
     return;
   }
   emptyState.classList.add('d-none');
 
-  const rows = sorted.map(a => {
+  // Clamp currentPage to valid range
+  const totalPages = Math.ceil(total / pageSize);
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const start = (currentPage - 1) * pageSize;
+  const page  = sorted.slice(start, start + pageSize);
+
+  const rows = page.map(a => {
     const sport  = a.sport_type || a.type || 'Other';
     const date   = activityDate(a);
     const name   = a.name || '—';
@@ -382,6 +396,73 @@ function updateTable(activities) {
   });
 
   tbody.innerHTML = rows.join('');
+  renderPagination(total);
+}
+
+function renderPagination(total) {
+  const totalPages = Math.ceil(total / pageSize);
+  const info       = document.getElementById('pagination-info');
+  const controls   = document.getElementById('pagination-controls');
+  const bar        = document.getElementById('pagination-bar');
+
+  if (total === 0) {
+    info.textContent = '';
+    controls.innerHTML = '';
+    bar.style.display = 'none';
+    return;
+  }
+
+  bar.style.display = '';
+  const start = (currentPage - 1) * pageSize + 1;
+  const end   = Math.min(currentPage * pageSize, total);
+  info.textContent = `Showing ${start}–${end} of ${total.toLocaleString()} entries`;
+
+  // Build page buttons: prev, up to 7 page numbers, next
+  const buttons = [];
+
+  // Previous
+  buttons.push(`<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+    <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">&#8249;</a>
+  </li>`);
+
+  // Page numbers with ellipsis
+  const delta = 2;
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+      pages.push(i);
+    }
+  }
+  let prev = null;
+  for (const p of pages) {
+    if (prev !== null && p - prev > 1) {
+      buttons.push(`<li class="page-item disabled"><a class="page-link" href="#">…</a></li>`);
+    }
+    buttons.push(`<li class="page-item ${p === currentPage ? 'active' : ''}">
+      <a class="page-link" href="#" data-page="${p}">${p}</a>
+    </li>`);
+    prev = p;
+  }
+
+  // Next
+  buttons.push(`<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+    <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">&#8250;</a>
+  </li>`);
+
+  controls.innerHTML = buttons.join('');
+
+  // Attach click handlers
+  controls.querySelectorAll('[data-page]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const p = parseInt(link.dataset.page);
+      if (p >= 1 && p <= totalPages && p !== currentPage) {
+        currentPage = p;
+        updateTable(getFilteredActivities());
+        document.getElementById('activity-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
 }
 
 function escHtml(str) {
@@ -399,19 +480,33 @@ function updateAll() {
   updateTable(filtered);
 }
 
-// ── Filter pill builder ───────────────────────────────────────────────────
+// ── Date range filter ─────────────────────────────────────────────────────
 
-function buildYearPills() {
-  const years = [...new Set(allActivities.map(activityYear).filter(Boolean))].sort((a,b) => b-a);
-  const container = document.getElementById('year-filters');
-  for (const yr of years) {
-    const btn = document.createElement('button');
-    btn.className = 'btn pill-btn';
-    btn.dataset.year = yr;
-    btn.textContent = yr;
-    btn.addEventListener('click', () => toggleYearFilter(yr, btn));
-    container.appendChild(btn);
+function initDateRangeFilter() {
+  const startInput = document.getElementById('date-start');
+  const endInput   = document.getElementById('date-end');
+  const clearBtn   = document.getElementById('date-clear-btn');
+
+  function onDateChange() {
+    dateStart = startInput.value;
+    dateEnd   = endInput.value;
+    clearBtn.style.display = (dateStart || dateEnd) ? '' : 'none';
+    currentPage = 1;
+    updateAll();
   }
+
+  startInput.addEventListener('change', onDateChange);
+  endInput.addEventListener('change', onDateChange);
+
+  clearBtn.addEventListener('click', () => {
+    startInput.value = '';
+    endInput.value   = '';
+    dateStart = '';
+    dateEnd   = '';
+    clearBtn.style.display = 'none';
+    currentPage = 1;
+    updateAll();
+  });
 }
 
 function buildSportPills() {
@@ -431,20 +526,6 @@ function buildSportPills() {
 
 // ── Toggle handlers ───────────────────────────────────────────────────────
 
-function toggleYearFilter(year, btn) {
-  const allBtn = document.querySelector('#year-filters [data-year="all"]');
-  if (selectedYears.has(year)) {
-    selectedYears.delete(year);
-    btn.classList.remove('active');
-  } else {
-    selectedYears.add(year);
-    btn.classList.add('active');
-  }
-  // "All Years" is active only when nothing is selected
-  allBtn.classList.toggle('active', selectedYears.size === 0);
-  updateAll();
-}
-
 function toggleSportFilter(sport, btn) {
   const allBtn = document.querySelector('#sport-filters [data-sport="all"]');
   if (selectedSports.has(sport)) {
@@ -455,6 +536,7 @@ function toggleSportFilter(sport, btn) {
     btn.classList.add('active');
   }
   allBtn.classList.toggle('active', selectedSports.size === 0);
+  currentPage = 1;
   updateAll();
 }
 
@@ -475,6 +557,7 @@ function initSortHandlers() {
         h.classList.remove('sort-asc','sort-desc');
       });
       th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      currentPage = 1;
       updateTable(getFilteredActivities());
     });
   });
@@ -488,23 +571,29 @@ function initSortHandlers() {
 function initSearch() {
   document.getElementById('search-input').addEventListener('input', e => {
     searchQuery = e.target.value.trim();
+    currentPage = 1;
     updateAll();
   });
 }
 
-// ── "All" pill resets ─────────────────────────────────────────────────────
+// ── Page size selector ────────────────────────────────────────────────────
+
+function initPageSize() {
+  document.getElementById('page-size-select').addEventListener('change', e => {
+    pageSize = parseInt(e.target.value);
+    currentPage = 1;
+    updateTable(getFilteredActivities());
+  });
+}
+
+// ── "All" pill reset (sports) ─────────────────────────────────────────────
 
 function initAllPills() {
-  document.querySelector('#year-filters [data-year="all"]').addEventListener('click', () => {
-    selectedYears.clear();
-    document.querySelectorAll('#year-filters .pill-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('#year-filters [data-year="all"]').classList.add('active');
-    updateAll();
-  });
   document.querySelector('#sport-filters [data-sport="all"]').addEventListener('click', () => {
     selectedSports.clear();
     document.querySelectorAll('#sport-filters .pill-btn').forEach(b => b.classList.remove('active'));
     document.querySelector('#sport-filters [data-sport="all"]').classList.add('active');
+    currentPage = 1;
     updateAll();
   });
 }
@@ -512,10 +601,11 @@ function initAllPills() {
 // ── Init ──────────────────────────────────────────────────────────────────
 
 (function init() {
-  buildYearPills();
   buildSportPills();
   initAllPills();
   initSortHandlers();
   initSearch();
+  initPageSize();
+  initDateRangeFilter();
   updateAll();
 })();
