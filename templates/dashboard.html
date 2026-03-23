@@ -123,18 +123,16 @@
           <i class="bi bi-table me-1"></i>Activities
           <span class="badge bg-secondary ms-1 fw-normal" id="table-count">0</span>
         </h6>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-nowrap">
           <input id="search-input" type="search" class="form-control form-control-sm"
-                 placeholder="Search name…" style="min-width:180px" />
-          <div class="d-flex align-items-center gap-1" style="white-space:nowrap">
-            <label for="page-size-select" class="text-muted mb-0" style="font-size:.85rem">Show</label>
-            <select id="page-size-select" class="form-select form-select-sm" style="width:auto">
-              <option value="10">10</option>
-              <option value="25" selected>25</option>
-              <option value="50">50</option>
-            </select>
-            <span class="text-muted mb-0" style="font-size:.85rem">entries</span>
-          </div>
+                 placeholder="Search name…" style="width:180px;flex-shrink:0" />
+          <label for="page-size-select" class="text-muted mb-0 flex-shrink-0" style="font-size:.85rem">Show</label>
+          <select id="page-size-select" class="form-select form-select-sm flex-shrink-0" style="width:auto">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+          </select>
+          <span class="text-muted mb-0 flex-shrink-0" style="font-size:.85rem">entries</span>
         </div>
       </div>
 
