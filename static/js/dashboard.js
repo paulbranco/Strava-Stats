@@ -21,31 +21,15 @@ function sportIcon(type) {
   return SPORT_ICONS[type] || '🎯';
 }
 
-function metersToMiles(m) {
-  return m * 0.000621371;
-}
-function metersToFeet(m) {
-  return m * 3.28084;
-}
-function metersToYards(m) {
-  return m * 1.09361;
-}
+function metersToMiles(m) { return m * 0.000621371; }
+function metersToFeet(m)  { return m * 3.28084; }
+function metersToYards(m) { return m * 1.09361; }
 
-function fmtMiles(miles) {
-  return miles.toFixed(1) + ' mi';
-}
-function fmtKm(m) {
-  return (m / 1000).toFixed(1) + ' km';
-}
-function fmtFeet(ft) {
-  return Math.round(ft).toLocaleString() + ' ft';
-}
-function fmtMeters(m) {
-  return Math.round(m).toLocaleString() + ' m';
-}
-function fmtYards(yd) {
-  return Math.round(yd).toLocaleString() + ' yd';
-}
+function fmtMiles(miles) { return miles.toFixed(1) + ' mi'; }
+function fmtKm(m)        { return (m / 1000).toFixed(1) + ' km'; }
+function fmtFeet(ft)     { return Math.round(ft).toLocaleString() + ' ft'; }
+function fmtMeters(m)    { return Math.round(m).toLocaleString() + ' m'; }
+function fmtYards(yd)    { return Math.round(yd).toLocaleString() + ' yd'; }
 
 function fmtTime(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -65,49 +49,41 @@ function fmtTimeLong(seconds) {
 /** Returns pace (min/mi) formatted as "MM:SS /mi", or speed in mph. */
 function fmtPace(activity) {
   const type = activity.sport_type || activity.type || '';
-  const mps = activity.average_speed || 0;
+  const mps  = activity.average_speed || 0;
   if (!mps) return '—';
 
-  const runTypes = ['Run','TrailRun','VirtualRun','Walk','Hike'];
+  const runTypes  = ['Run','TrailRun','VirtualRun','Walk','Hike'];
   const rideTypes = ['Ride','VirtualRide','MountainBikeRide','EBikeRide','Velomobile'];
   const swimTypes = ['Swim'];
 
   if (runTypes.includes(type)) {
-    // pace in min/mi
     const minPerMile = (1 / (mps * 0.000621371)) / 60;
     const mins = Math.floor(minPerMile);
     const secs = Math.round((minPerMile - mins) * 60);
     return `${mins}:${String(secs).padStart(2,'0')} /mi`;
   }
   if (rideTypes.includes(type)) {
-    const mph = mps * 2.23694;
-    return `${mph.toFixed(1)} mph`;
+    return `${(mps * 2.23694).toFixed(1)} mph`;
   }
   if (swimTypes.includes(type)) {
-    // pace per 100 yards
-    const yardsPerSec = mps * 1.09361;
+    const yardsPerSec    = mps * 1.09361;
     const secsPerHundred = 100 / yardsPerSec;
     const m = Math.floor(secsPerHundred / 60);
     const s = Math.round(secsPerHundred % 60);
     return `${m}:${String(s).padStart(2,'0')} /100yd`;
   }
-  // Generic speed
-  const mph = mps * 2.23694;
-  return `${mph.toFixed(1)} mph`;
+  return `${(mps * 2.23694).toFixed(1)} mph`;
 }
 
 /** Format distance appropriately for sport type. */
 function fmtDistance(activity) {
   const type = activity.sport_type || activity.type || '';
-  const m = activity.distance || 0;
+  const m    = activity.distance || 0;
   if (type === 'Swim') return fmtYards(metersToYards(m));
   return fmtMiles(metersToMiles(m));
 }
 
-/** Return the raw numeric value used for sorting distance. */
-function distanceSortVal(activity) {
-  return activity.distance || 0;
-}
+function distanceSortVal(activity) { return activity.distance || 0; }
 
 function activityYear(activity) {
   const d = activity.start_date_local || activity.start_date || '';
@@ -120,16 +96,26 @@ function activityDate(activity) {
   return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-// Returns "YYYY-Www" bucket for weekly chart
+// Returns "YYYY-Www" ISO week bucket
 function isoWeekKey(dateStr) {
   if (!dateStr) return null;
-  const d = new Date(dateStr);
+  const d   = new Date(dateStr);
   const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const dayNum = tmp.getUTCDay() || 7;
   tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+  const weekNo    = Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
   return `${tmp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+// Convert an ISO week key back to its Monday date
+function isoWeekToMonday(weekKey) {
+  const [yr, wStr] = weekKey.split('-W');
+  const week  = parseInt(wStr);
+  const jan4  = new Date(parseInt(yr), 0, 4);
+  const monday = new Date(jan4);
+  monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (week - 1) * 7);
+  return monday;
 }
 
 // ── State ────────────────────────────────────────────────────────────────
@@ -138,24 +124,46 @@ const allActivities = JSON.parse(
   document.getElementById('activities-data').textContent
 );
 
-let dateStart = '';                 // 'YYYY-MM-DD' or ''
-let dateEnd   = '';                 // 'YYYY-MM-DD' or ''
-const selectedSports = new Set();   // empty = all
-let searchQuery = '';
-let sortColumn = 'date';
-let sortDir = 'desc';               // 'asc' | 'desc'
-let currentPage = 1;
-let pageSize = 25;
+let dateStart = '';
+let dateEnd   = '';
+const selectedSports = new Set();
+let searchQuery  = '';
+let sortColumn   = 'date';
+let sortDir      = 'desc';
+let currentPage  = 1;
+let pageSize     = 25;
 
-let weeklyChart = null;
-let sportChart  = null;
+let weeklyChart     = null;
+let weeklyTimeChart = null;
+let sportChart      = null;
+
+// ── Sport color map (built once so colors are stable across filters) ──────
+
+const CHART_COLORS = [
+  '#FC4C02','#1a56b0','#2e7d32','#0277bd','#e65100',
+  '#880e4f','#6a1b9a','#00695c','#4527a0','#c62828',
+  '#0d47a1','#1b5e20','#827717','#4e342e','#263238',
+];
+
+const SPORT_COLOR_MAP = (() => {
+  const sports = [...new Set(
+    allActivities.map(a => a.sport_type || a.type || 'Other')
+  )].sort();
+  const map = {};
+  sports.forEach((s, i) => { map[s] = CHART_COLORS[i % CHART_COLORS.length]; });
+  return map;
+})();
+
+function sportColor(sport) {
+  return SPORT_COLOR_MAP[sport] || CHART_COLORS[CHART_COLORS.length - 1];
+}
 
 // ── Filtering ────────────────────────────────────────────────────────────
 
 function getFilteredActivities() {
   return allActivities.filter(a => {
-    const sport     = a.sport_type || a.type || '';
-    const actDate   = (a.start_date_local || a.start_date || '').slice(0, 10);
+    const sport   = a.sport_type || a.type || '';
+    const actDate = (a.start_date_local || a.start_date || '').slice(0, 10);
 
     if (dateStart && actDate < dateStart) return false;
     if (dateEnd   && actDate > dateEnd)   return false;
@@ -183,70 +191,155 @@ function updateStats(activities) {
   document.getElementById('stat-count').textContent       = activities.length.toLocaleString();
 }
 
-// ── Weekly chart ─────────────────────────────────────────────────────────
+// ── Weekly chart builder (shared) ─────────────────────────────────────────
+
+/**
+ * Build stacked-bar chart data broken down by sport for a given week metric.
+ * valueGetter(activity) → numeric value to accumulate.
+ */
+function buildWeeklyStackedData(activities, valueGetter) {
+  // Collect all week keys
+  const weekKeySet = new Set();
+  for (const a of activities) {
+    const k = isoWeekKey(a.start_date_local || a.start_date);
+    if (k) weekKeySet.add(k);
+  }
+  const keys = [...weekKeySet].sort();
+
+  // Axis labels (short) and tooltip labels (with day of week)
+  const labels        = keys.map(k => isoWeekToMonday(k).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+  const tooltipLabels = keys.map(k => isoWeekToMonday(k).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+
+  // Sports present in the current filtered set (sorted for stable ordering)
+  const sports = [...new Set(
+    activities.map(a => a.sport_type || a.type || 'Other')
+  )].sort();
+
+  // Accumulate per sport per week
+  const buckets = {};
+  for (const sport of sports) {
+    buckets[sport] = {};
+    for (const k of keys) buckets[sport][k] = 0;
+  }
+  for (const a of activities) {
+    const k = isoWeekKey(a.start_date_local || a.start_date);
+    if (!k) continue;
+    const sport = a.sport_type || a.type || 'Other';
+    buckets[sport][k] = (buckets[sport][k] || 0) + valueGetter(a);
+  }
+
+  const datasets = sports.map(sport => ({
+    label: `${sportIcon(sport)} ${sport}`,
+    data: keys.map(k => +(buckets[sport][k] || 0).toFixed(2)),
+    backgroundColor: sportColor(sport) + 'cc',
+    borderColor: sportColor(sport),
+    borderWidth: 1,
+    borderRadius: 2,
+  }));
+
+  return { labels, tooltipLabels, datasets };
+}
+
+// ── Weekly Distance chart ─────────────────────────────────────────────────
 
 function updateWeeklyChart(activities) {
-  const buckets = {};
-  for (const a of activities) {
-    const key = isoWeekKey(a.start_date_local || a.start_date);
-    if (!key) continue;
-    buckets[key] = (buckets[key] || 0) + metersToMiles(a.distance || 0);
-  }
-  const keys   = Object.keys(buckets).sort();
-  const labels = keys.map(k => {
-    // Display as "Mon DD" of that week's Monday
-    const [yr, wStr] = k.split('-W');
-    const week = parseInt(wStr);
-    const jan4 = new Date(parseInt(yr), 0, 4);
-    const monday = new Date(jan4);
-    monday.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7) + (week - 1) * 7);
-    return monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  });
-  const values = keys.map(k => +buckets[k].toFixed(2));
+  const { labels, tooltipLabels, datasets } = buildWeeklyStackedData(
+    activities,
+    a => metersToMiles(a.distance || 0)
+  );
+
+  if (weeklyChart) { weeklyChart.destroy(); weeklyChart = null; }
 
   const ctx = document.getElementById('weekly-chart').getContext('2d');
-  if (weeklyChart) {
-    weeklyChart.data.labels = labels;
-    weeklyChart.data.datasets[0].data = values;
-    weeklyChart.update();
-    return;
-  }
   weeklyChart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Miles',
-        data: values,
-        backgroundColor: STRAVA_ORANGE + 'cc',
-        borderColor: STRAVA_ORANGE,
-        borderWidth: 1,
-        borderRadius: 3,
-      }],
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
+        legend: {
+          position: 'bottom',
+          labels: { font: { size: 11 }, boxWidth: 12, padding: 8 },
+        },
         tooltip: {
+          mode: 'index',
+          intersect: false,
           callbacks: {
-            label: ctx => `${ctx.parsed.y.toFixed(1)} mi`,
+            title: items => tooltipLabels[items[0].dataIndex],
+            label: item  => ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi`,
+            footer: items => {
+              const total = items.reduce((s, i) => s + i.parsed.y, 0);
+              return `Total: ${total.toFixed(1)} mi`;
+            },
           },
         },
       },
       scales: {
         x: {
+          stacked: true,
           grid: { display: false },
           ticks: { maxTicksLimit: 12, font: { size: 11 } },
         },
         y: {
+          stacked: true,
           beginAtZero: true,
           grid: { color: '#f0f0f0' },
-          ticks: {
-            font: { size: 11 },
-            callback: v => v + ' mi',
+          ticks: { font: { size: 11 }, callback: v => v + ' mi' },
+        },
+      },
+    },
+  });
+}
+
+// ── Weekly Time chart ─────────────────────────────────────────────────────
+
+function updateWeeklyTimeChart(activities) {
+  const { labels, tooltipLabels, datasets } = buildWeeklyStackedData(
+    activities,
+    a => (a.moving_time || 0) / 60   // seconds → minutes
+  );
+
+  if (weeklyTimeChart) { weeklyTimeChart.destroy(); weeklyTimeChart = null; }
+
+  const ctx = document.getElementById('weekly-time-chart').getContext('2d');
+  weeklyTimeChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { size: 11 }, boxWidth: 12, padding: 8 },
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            title: items => tooltipLabels[items[0].dataIndex],
+            label: item  => ` ${item.dataset.label}: ${item.parsed.y.toFixed(0)} min`,
+            footer: items => {
+              const total = items.reduce((s, i) => s + i.parsed.y, 0);
+              const h = Math.floor(total / 60);
+              const m = Math.round(total % 60);
+              return h > 0 ? `Total: ${h}h ${String(m).padStart(2,'0')}m` : `Total: ${m} min`;
+            },
           },
+        },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { maxTicksLimit: 12, font: { size: 11 } },
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          grid: { color: '#f0f0f0' },
+          ticks: { font: { size: 11 }, callback: v => v + ' min' },
         },
       },
     },
@@ -255,28 +348,22 @@ function updateWeeklyChart(activities) {
 
 // ── Sport breakdown chart ─────────────────────────────────────────────────
 
-const CHART_COLORS = [
-  '#FC4C02','#1a56b0','#2e7d32','#0277bd','#e65100',
-  '#880e4f','#6a1b9a','#00695c','#4527a0','#c62828',
-  '#0d47a1','#1b5e20','#827717','#4e342e','#263238',
-];
-
 function updateSportChart(activities) {
   const totals = {};
   for (const a of activities) {
     const sport = a.sport_type || a.type || 'Other';
     totals[sport] = (totals[sport] || 0) + metersToMiles(a.distance || 0);
   }
-  const sorted  = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-  const labels  = sorted.map(([s]) => `${sportIcon(s)} ${s}`);
-  const values  = sorted.map(([, v]) => +v.toFixed(2));
-  const colors  = sorted.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+  const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+  const labels = sorted.map(([s]) => `${sportIcon(s)} ${s}`);
+  const values = sorted.map(([, v]) => +v.toFixed(2));
+  const colors = sorted.map(([s]) => sportColor(s));
 
   const ctx = document.getElementById('sport-chart').getContext('2d');
   if (sportChart) {
-    sportChart.data.labels = labels;
-    sportChart.data.datasets[0].data   = values;
-    sportChart.data.datasets[0].backgroundColor = colors;
+    sportChart.data.labels                        = labels;
+    sportChart.data.datasets[0].data              = values;
+    sportChart.data.datasets[0].backgroundColor   = colors;
     sportChart.update();
     return;
   }
@@ -284,12 +371,7 @@ function updateSportChart(activities) {
     type: 'doughnut',
     data: {
       labels,
-      datasets: [{
-        data: values,
-        backgroundColor: colors,
-        borderWidth: 2,
-        borderColor: '#fff',
-      }],
+      datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }],
     },
     options: {
       responsive: true,
@@ -301,9 +383,7 @@ function updateSportChart(activities) {
           labels: { font: { size: 11 }, boxWidth: 12, padding: 8 },
         },
         tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.parsed.toFixed(1)} mi`,
-          },
+          callbacks: { label: ctx => ` ${ctx.parsed.toFixed(1)} mi` },
         },
       },
     },
@@ -316,20 +396,13 @@ function sortActivities(activities) {
   const dir = sortDir === 'asc' ? 1 : -1;
   return [...activities].sort((a, b) => {
     switch (sortColumn) {
-      case 'date':
-        return dir * ((a.start_date || '').localeCompare(b.start_date || ''));
-      case 'sport':
-        return dir * ((a.sport_type || a.type || '').localeCompare(b.sport_type || b.type || ''));
-      case 'distance':
-        return dir * (distanceSortVal(a) - distanceSortVal(b));
-      case 'time':
-        return dir * ((a.moving_time || 0) - (b.moving_time || 0));
-      case 'pace':
-        return dir * ((a.average_speed || 0) - (b.average_speed || 0));
-      case 'elevation':
-        return dir * ((a.total_elevation_gain || 0) - (b.total_elevation_gain || 0));
-      default:
-        return 0;
+      case 'date':      return dir * ((a.start_date || '').localeCompare(b.start_date || ''));
+      case 'sport':     return dir * ((a.sport_type || a.type || '').localeCompare(b.sport_type || b.type || ''));
+      case 'distance':  return dir * (distanceSortVal(a) - distanceSortVal(b));
+      case 'time':      return dir * ((a.moving_time || 0) - (b.moving_time || 0));
+      case 'pace':      return dir * ((a.average_speed || 0) - (b.average_speed || 0));
+      case 'elevation': return dir * ((a.total_elevation_gain || 0) - (b.total_elevation_gain || 0));
+      default:          return 0;
     }
   });
 }
@@ -341,7 +414,7 @@ function sportBadgeClass(type) {
 }
 
 function updateTable(activities) {
-  const tbody = document.getElementById('activity-tbody');
+  const tbody  = document.getElementById('activity-tbody');
   const sorted = sortActivities(activities);
   const total  = sorted.length;
 
@@ -356,7 +429,6 @@ function updateTable(activities) {
   }
   emptyState.classList.add('d-none');
 
-  // Clamp currentPage to valid range
   const totalPages = Math.ceil(total / pageSize);
   if (currentPage > totalPages) currentPage = totalPages;
   if (currentPage < 1) currentPage = 1;
@@ -371,9 +443,7 @@ function updateTable(activities) {
     const dist   = fmtDistance(a);
     const time   = fmtTimeLong(a.moving_time || 0);
     const pace   = fmtPace(a);
-    const elevFt = a.total_elevation_gain
-      ? fmtFeet(metersToFeet(a.total_elevation_gain))
-      : '—';
+    const elevFt = a.total_elevation_gain ? fmtFeet(metersToFeet(a.total_elevation_gain)) : '—';
 
     return `<tr>
       <td class="text-muted" style="white-space:nowrap">${date}</td>
@@ -383,11 +453,7 @@ function updateTable(activities) {
           ${escHtml(name)}
         </a>
       </td>
-      <td>
-        <span class="sport-badge ${sportBadgeClass(sport)}">
-          ${sportIcon(sport)} ${sport}
-        </span>
-      </td>
+      <td><span class="sport-badge ${sportBadgeClass(sport)}">${sportIcon(sport)} ${sport}</span></td>
       <td class="text-end text-nowrap">${dist}</td>
       <td class="text-end text-nowrap">${time}</td>
       <td class="text-end text-nowrap">${pace}</td>
@@ -406,7 +472,7 @@ function renderPagination(total) {
   const bar        = document.getElementById('pagination-bar');
 
   if (total === 0) {
-    info.textContent = '';
+    info.textContent  = '';
     controls.innerHTML = '';
     bar.style.display = 'none';
     return;
@@ -417,15 +483,12 @@ function renderPagination(total) {
   const end   = Math.min(currentPage * pageSize, total);
   info.textContent = `Showing ${start}–${end} of ${total.toLocaleString()} entries`;
 
-  // Build page buttons: prev, up to 7 page numbers, next
   const buttons = [];
 
-  // Previous
   buttons.push(`<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
     <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">&#8249;</a>
   </li>`);
 
-  // Page numbers with ellipsis
   const delta = 2;
   const pages = [];
   for (let i = 1; i <= totalPages; i++) {
@@ -444,14 +507,12 @@ function renderPagination(total) {
     prev = p;
   }
 
-  // Next
   buttons.push(`<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
     <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">&#8250;</a>
   </li>`);
 
   controls.innerHTML = buttons.join('');
 
-  // Attach click handlers
   controls.querySelectorAll('[data-page]').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
@@ -476,6 +537,7 @@ function updateAll() {
   const filtered = getFilteredActivities();
   updateStats(filtered);
   updateWeeklyChart(filtered);
+  updateWeeklyTimeChart(filtered);
   updateSportChart(filtered);
   updateTable(filtered);
 }
@@ -516,9 +578,9 @@ function buildSportPills() {
   const container = document.getElementById('sport-filters');
   for (const sport of sports) {
     const btn = document.createElement('button');
-    btn.className = 'btn pill-btn';
+    btn.className   = 'btn pill-btn';
     btn.dataset.sport = sport;
-    btn.innerHTML = `${sportIcon(sport)} ${sport}`;
+    btn.innerHTML   = `${sportIcon(sport)} ${sport}`;
     btn.addEventListener('click', () => toggleSportFilter(sport, btn));
     container.appendChild(btn);
   }
@@ -550,18 +612,14 @@ function initSortHandlers() {
         sortDir = sortDir === 'asc' ? 'desc' : 'asc';
       } else {
         sortColumn = col;
-        sortDir = col === 'date' ? 'desc' : 'asc';
+        sortDir    = col === 'date' ? 'desc' : 'asc';
       }
-      // Update header classes
-      document.querySelectorAll('th.sortable').forEach(h => {
-        h.classList.remove('sort-asc','sort-desc');
-      });
+      document.querySelectorAll('th.sortable').forEach(h => h.classList.remove('sort-asc','sort-desc'));
       th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
       currentPage = 1;
       updateTable(getFilteredActivities());
     });
   });
-  // Default sort indicator
   const defaultTh = document.querySelector('th[data-col="date"]');
   if (defaultTh) defaultTh.classList.add('sort-desc');
 }

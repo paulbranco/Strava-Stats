@@ -83,10 +83,12 @@
   </div>
 
   <!-- ── Charts ─────────────────────────────────────────────────────────── -->
+
+  <!-- Weekly trend charts -->
   <div class="row g-3 mb-4">
 
     <!-- Weekly distance trend -->
-    <div class="col-12 col-xl-8">
+    <div class="col-12 col-lg-6">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body">
           <h6 class="card-title text-muted mb-3">
@@ -99,8 +101,27 @@
       </div>
     </div>
 
+    <!-- Weekly time trend -->
+    <div class="col-12 col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-clock me-1"></i>Weekly Time (minutes)
+          </h6>
+          <div class="chart-wrapper">
+            <canvas id="weekly-time-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Sport breakdown -->
+  <div class="row g-3 mb-4">
+
     <!-- Sport breakdown donut -->
-    <div class="col-12 col-xl-4">
+    <div class="col-12 col-lg-4">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body d-flex flex-column">
           <h6 class="card-title text-muted mb-3">
