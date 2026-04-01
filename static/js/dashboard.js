@@ -267,7 +267,7 @@ function updateWeeklyChart(activities) {
           intersect: false,
           callbacks: {
             title: items => tooltipLabels[items[0].dataIndex],
-            label: item  => ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi`,
+            label: item  => item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi` : null,
             footer: items => {
               const total = items.reduce((s, i) => s + i.parsed.y, 0);
               return `Total: ${total.toFixed(1)} mi`;
@@ -319,7 +319,7 @@ function updateWeeklyTimeChart(activities) {
           intersect: false,
           callbacks: {
             title: items => tooltipLabels[items[0].dataIndex],
-            label: item  => ` ${item.dataset.label}: ${item.parsed.y.toFixed(0)} min`,
+            label: item  => item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(0)} min` : null,
             footer: items => {
               const total = items.reduce((s, i) => s + i.parsed.y, 0);
               const h = Math.floor(total / 60);
