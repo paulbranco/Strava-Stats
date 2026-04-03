@@ -140,10 +140,12 @@
 
   <!-- ── Charts ─────────────────────────────────────────────────────────── -->
 
-  <!-- Activity Calendar Heatmap -->
+  <!-- Activity Calendar + Sport donuts -->
   <div class="row g-3 mb-4">
-    <div class="col-12">
-      <div class="card border-0 shadow-sm">
+
+    <!-- Activity Calendar Heatmap -->
+    <div class="col-12 col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
         <div class="card-body">
           <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-2">
             <h6 class="card-title text-muted mb-0">
@@ -169,9 +171,36 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Weekly / Monthly trend charts -->
+    <!-- Distance by Sport -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex flex-column">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-pie-chart me-1"></i>Distance by Sport (miles)
+          </h6>
+          <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
+            <canvas id="sport-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time by Sport -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex flex-column">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-pie-chart-fill me-1"></i>Time by Sport
+          </h6>
+          <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
+            <canvas id="sport-time-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
   <div class="row g-3 mb-4">
 
     <!-- Weekly distance trend -->
@@ -225,39 +254,6 @@
           </h6>
           <div class="chart-wrapper">
             <canvas id="monthly-time-chart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Sport breakdown donuts -->
-  <div class="row g-3 mb-4">
-
-    <!-- Distance by Sport -->
-    <div class="col-12 col-lg-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-pie-chart me-1"></i>Distance by Sport (miles)
-          </h6>
-          <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
-            <canvas id="sport-chart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Time by Sport -->
-    <div class="col-12 col-lg-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-pie-chart-fill me-1"></i>Time by Sport
-          </h6>
-          <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
-            <canvas id="sport-time-chart"></canvas>
           </div>
         </div>
       </div>

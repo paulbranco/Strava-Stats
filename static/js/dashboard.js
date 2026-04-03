@@ -640,12 +640,15 @@ function updateMonthlyChart(activities) {
     a => metersToMiles(a.distance || 0)
   );
 
+  const monthTotals = labels.map((_, i) => datasets.reduce((s, ds) => s + (ds.data[i] || 0), 0));
+  const avgDs = cumulativeAvgDataset(monthTotals, 'Rolling Avg', 'rgba(80,80,80,0.55)');
+
   if (monthlyChart) { monthlyChart.destroy(); monthlyChart = null; }
 
   const ctx = document.getElementById('monthly-chart').getContext('2d');
   monthlyChart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets },
+    data: { labels, datasets: [...datasets, avgDs] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -658,9 +661,16 @@ function updateMonthlyChart(activities) {
           mode: 'index',
           intersect: false,
           callbacks: {
-            label: item => item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi` : null,
+            label: item => {
+              if (item.dataset.label === 'Rolling Avg') {
+                return ` Rolling Avg: ${item.parsed.y.toFixed(1)} mi/mo`;
+              }
+              return item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi` : null;
+            },
             footer: items => {
-              const total = items.reduce((s, i) => s + i.parsed.y, 0);
+              const total = items
+                .filter(i => i.dataset.label !== 'Rolling Avg')
+                .reduce((s, i) => s + i.parsed.y, 0);
               return `Total: ${total.toFixed(1)} mi`;
             },
           },
@@ -691,12 +701,15 @@ function updateMonthlyTimeChart(activities) {
     a => (a.moving_time || 0) / 3600   // seconds → hours
   );
 
+  const monthTotals = labels.map((_, i) => datasets.reduce((s, ds) => s + (ds.data[i] || 0), 0));
+  const avgDs = cumulativeAvgDataset(monthTotals, 'Rolling Avg', 'rgba(80,80,80,0.55)');
+
   if (monthlyTimeChart) { monthlyTimeChart.destroy(); monthlyTimeChart = null; }
 
   const ctx = document.getElementById('monthly-time-chart').getContext('2d');
   monthlyTimeChart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets },
+    data: { labels, datasets: [...datasets, avgDs] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -706,9 +719,16 @@ function updateMonthlyTimeChart(activities) {
           mode: 'index',
           intersect: false,
           callbacks: {
-            label: item => item.parsed.y > 0 ? ` ${item.dataset.label}: ${fmtHoursShort(item.parsed.y)}` : null,
+            label: item => {
+              if (item.dataset.label === 'Rolling Avg') {
+                return ` Rolling Avg: ${fmtHoursShort(item.parsed.y)}/mo`;
+              }
+              return item.parsed.y > 0 ? ` ${item.dataset.label}: ${fmtHoursShort(item.parsed.y)}` : null;
+            },
             footer: items => {
-              const total = items.reduce((s, i) => s + i.parsed.y, 0);
+              const total = items
+                .filter(i => i.dataset.label !== 'Rolling Avg')
+                .reduce((s, i) => s + i.parsed.y, 0);
               const h = Math.floor(total);
               const m = Math.round((total - h) * 60);
               return h > 0 ? `Total: ${h}h ${String(m).padStart(2,'0')}m` : `Total: ${m}m`;
