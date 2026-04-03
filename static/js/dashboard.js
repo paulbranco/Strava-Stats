@@ -135,6 +135,7 @@ let pageSize     = 25;
 
 let weeklyChart     = null;
 let weeklyTimeChart = null;
+let monthlyChart    = null;
 let sportChart      = null;
 
 const heatmapMonths = new Set(); // 1-indexed months; empty = all
@@ -242,6 +243,31 @@ function buildWeeklyStackedData(activities, valueGetter) {
   return { labels, tooltipLabels, datasets };
 }
 
+// ── Shared: rolling average line dataset ──────────────────────────────────
+
+/**
+ * Given per-week total values, return a cumulative rolling-average array.
+ * avg[i] = mean of values[0..i]  (expanding window across the full timeline).
+ */
+function cumulativeAvgDataset(weekTotals, label, color) {
+  let runSum = 0;
+  const data = weekTotals.map((v, i) => { runSum += v; return +(runSum / (i + 1)).toFixed(3); });
+  return {
+    type: 'line',
+    label,
+    data,
+    borderColor: color,
+    borderWidth: 2,
+    borderDash: [5, 3],
+    backgroundColor: 'transparent',
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    fill: false,
+    tension: 0.4,
+    order: 0,   // draw on top of bars
+  };
+}
+
 // ── Weekly Distance chart ─────────────────────────────────────────────────
 
 function updateWeeklyChart(activities) {
@@ -250,12 +276,16 @@ function updateWeeklyChart(activities) {
     a => metersToMiles(a.distance || 0)
   );
 
+  // Cumulative rolling average across the full timeline
+  const weekTotals = labels.map((_, i) => datasets.reduce((s, ds) => s + (ds.data[i] || 0), 0));
+  const avgDs = cumulativeAvgDataset(weekTotals, 'Rolling Avg', 'rgba(80,80,80,0.55)');
+
   if (weeklyChart) { weeklyChart.destroy(); weeklyChart = null; }
 
   const ctx = document.getElementById('weekly-chart').getContext('2d');
   weeklyChart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets },
+    data: { labels, datasets: [...datasets, avgDs] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -269,9 +299,16 @@ function updateWeeklyChart(activities) {
           intersect: false,
           callbacks: {
             title: items => tooltipLabels[items[0].dataIndex],
-            label: item  => item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi` : null,
+            label: item => {
+              if (item.dataset.label === 'Rolling Avg') {
+                return ` Rolling Avg: ${item.parsed.y.toFixed(1)} mi/wk`;
+              }
+              return item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi` : null;
+            },
             footer: items => {
-              const total = items.reduce((s, i) => s + i.parsed.y, 0);
+              const total = items
+                .filter(i => i.dataset.label !== 'Rolling Avg')
+                .reduce((s, i) => s + i.parsed.y, 0);
               return `Total: ${total.toFixed(1)} mi`;
             },
           },
@@ -308,12 +345,16 @@ function updateWeeklyTimeChart(activities) {
     a => (a.moving_time || 0) / 3600   // seconds → hours
   );
 
+  // Cumulative rolling average across the full timeline
+  const weekTotals = labels.map((_, i) => datasets.reduce((s, ds) => s + (ds.data[i] || 0), 0));
+  const avgDs = cumulativeAvgDataset(weekTotals, 'Rolling Avg', 'rgba(80,80,80,0.55)');
+
   if (weeklyTimeChart) { weeklyTimeChart.destroy(); weeklyTimeChart = null; }
 
   const ctx = document.getElementById('weekly-time-chart').getContext('2d');
   weeklyTimeChart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets },
+    data: { labels, datasets: [...datasets, avgDs] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -328,11 +369,15 @@ function updateWeeklyTimeChart(activities) {
           callbacks: {
             title: items => tooltipLabels[items[0].dataIndex],
             label: item => {
-              if (item.parsed.y <= 0) return null;
-              return ` ${item.dataset.label}: ${fmtHoursShort(item.parsed.y)}`;
+              if (item.dataset.label === 'Rolling Avg') {
+                return ` Rolling Avg: ${fmtHoursShort(item.parsed.y)}/wk`;
+              }
+              return item.parsed.y > 0 ? ` ${item.dataset.label}: ${fmtHoursShort(item.parsed.y)}` : null;
             },
             footer: items => {
-              const total = items.reduce((s, i) => s + i.parsed.y, 0);
+              const total = items
+                .filter(i => i.dataset.label !== 'Rolling Avg')
+                .reduce((s, i) => s + i.parsed.y, 0);
               const h = Math.floor(total);
               const m = Math.round((total - h) * 60);
               return h > 0 ? `Total: ${h}h ${String(m).padStart(2,'0')}m` : `Total: ${m}m`;
@@ -542,6 +587,150 @@ function escHtml(str) {
             .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// ── Monthly Distance chart ────────────────────────────────────────────────
+
+function buildMonthlyStackedData(activities, valueGetter) {
+  const monthKeySet = new Set();
+  for (const a of activities) {
+    const d = a.start_date_local || a.start_date || '';
+    if (d) monthKeySet.add(d.slice(0, 7)); // "YYYY-MM"
+  }
+  const keys = [...monthKeySet].sort();
+
+  const MNAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const labels = keys.map(k => {
+    const [yr, mo] = k.split('-');
+    return `${MNAMES[parseInt(mo) - 1]} '${yr.slice(2)}`;
+  });
+
+  const sports = [...new Set(activities.map(a => a.sport_type || a.type || 'Other'))].sort();
+
+  const buckets = {};
+  for (const sport of sports) {
+    buckets[sport] = {};
+    for (const k of keys) buckets[sport][k] = 0;
+  }
+  for (const a of activities) {
+    const d = a.start_date_local || a.start_date || '';
+    if (!d) continue;
+    const k     = d.slice(0, 7);
+    const sport = a.sport_type || a.type || 'Other';
+    buckets[sport][k] = (buckets[sport][k] || 0) + valueGetter(a);
+  }
+
+  const datasets = sports.map(sport => ({
+    label: `${sportIcon(sport)} ${sport}`,
+    data: keys.map(k => +(buckets[sport][k] || 0).toFixed(2)),
+    backgroundColor: sportColor(sport) + 'cc',
+    borderColor: sportColor(sport),
+    borderWidth: 1,
+    borderRadius: 2,
+  }));
+
+  return { labels, datasets };
+}
+
+function updateMonthlyChart(activities) {
+  const { labels, datasets } = buildMonthlyStackedData(
+    activities,
+    a => metersToMiles(a.distance || 0)
+  );
+
+  if (monthlyChart) { monthlyChart.destroy(); monthlyChart = null; }
+
+  const ctx = document.getElementById('monthly-chart').getContext('2d');
+  monthlyChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { size: 11 }, boxWidth: 12, padding: 8 },
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: item => item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi` : null,
+            footer: items => {
+              const total = items.reduce((s, i) => s + i.parsed.y, 0);
+              return `Total: ${total.toFixed(1)} mi`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { maxTicksLimit: 18, font: { size: 11 } },
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          grid: { color: '#f0f0f0' },
+          ticks: { font: { size: 11 }, callback: v => v + ' mi' },
+        },
+      },
+    },
+  });
+}
+
+// ── Year-over-Year badges ─────────────────────────────────────────────────
+
+/**
+ * Compute YoY % change for each stat using sport-filtered activities
+ * (ignores date range filter so the badge always reflects full calendar years).
+ */
+function updateYoY() {
+  const currentYear = new Date().getFullYear();
+  const prevYear    = currentYear - 1;
+
+  // Use sport filter but not date filter for YoY
+  const sportFiltered = allActivities.filter(a => {
+    const sport = a.sport_type || a.type || '';
+    return selectedSports.size === 0 || selectedSports.has(sport);
+  });
+
+  const thisYear = sportFiltered.filter(a => activityYear(a) === currentYear);
+  const lastYear = sportFiltered.filter(a => activityYear(a) === prevYear);
+
+  function pctChange(curr, prev) {
+    if (prev === 0) return null;
+    return (curr - prev) / prev * 100;
+  }
+
+  function badge(pct) {
+    if (pct === null) return '';
+    const up    = pct >= 0;
+    const arrow = up ? '↑' : '↓';
+    const cls   = up ? 'yoy-up' : 'yoy-down';
+    return `<span class="yoy-badge ${cls}">${arrow} ${Math.abs(pct).toFixed(0)}% YoY</span>`;
+  }
+
+  const distPct = pctChange(
+    thisYear.reduce((s, a) => s + (a.distance || 0), 0),
+    lastYear.reduce((s, a) => s + (a.distance || 0), 0)
+  );
+  const timePct = pctChange(
+    thisYear.reduce((s, a) => s + (a.moving_time || 0), 0),
+    lastYear.reduce((s, a) => s + (a.moving_time || 0), 0)
+  );
+  const elevPct = pctChange(
+    thisYear.reduce((s, a) => s + (a.total_elevation_gain || 0), 0),
+    lastYear.reduce((s, a) => s + (a.total_elevation_gain || 0), 0)
+  );
+  const cntPct  = pctChange(thisYear.length, lastYear.length);
+
+  document.getElementById('yoy-distance').innerHTML  = badge(distPct);
+  document.getElementById('yoy-time').innerHTML      = badge(timePct);
+  document.getElementById('yoy-elevation').innerHTML = badge(elevPct);
+  document.getElementById('yoy-count').innerHTML     = badge(cntPct);
+}
+
 // ── Activity Calendar Heatmap ─────────────────────────────────────────────
 
 function buildHeatmap(activities) {
@@ -738,9 +927,11 @@ function updatePRCards(activities) {
 function updateAll() {
   const filtered = getFilteredActivities();
   updateStats(filtered);
+  updateYoY();
   updatePRCards(filtered);
   buildHeatmap(filtered);
   updateWeeklyChart(filtered);
+  updateMonthlyChart(filtered);
   updateWeeklyTimeChart(filtered);
   updateSportChart(filtered);
   updateTable(filtered);

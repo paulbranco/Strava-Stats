@@ -41,7 +41,10 @@
     <div class="col-6 col-lg-3">
       <div class="stat-card card border-0 shadow-sm h-100">
         <div class="card-body">
-          <div class="stat-icon text-strava"><i class="bi bi-signpost-split"></i></div>
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <div class="stat-icon text-strava mb-0"><i class="bi bi-signpost-split"></i></div>
+            <div id="yoy-distance"></div>
+          </div>
           <div class="stat-value" id="stat-distance">—</div>
           <div class="stat-label">Total Distance</div>
           <div class="stat-sub" id="stat-distance-km"></div>
@@ -52,7 +55,10 @@
     <div class="col-6 col-lg-3">
       <div class="stat-card card border-0 shadow-sm h-100">
         <div class="card-body">
-          <div class="stat-icon text-strava"><i class="bi bi-clock"></i></div>
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <div class="stat-icon text-strava mb-0"><i class="bi bi-clock"></i></div>
+            <div id="yoy-time"></div>
+          </div>
           <div class="stat-value" id="stat-time">—</div>
           <div class="stat-label">Total Moving Time</div>
         </div>
@@ -62,7 +68,10 @@
     <div class="col-6 col-lg-3">
       <div class="stat-card card border-0 shadow-sm h-100">
         <div class="card-body">
-          <div class="stat-icon text-strava"><i class="bi bi-graph-up"></i></div>
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <div class="stat-icon text-strava mb-0"><i class="bi bi-graph-up"></i></div>
+            <div id="yoy-elevation"></div>
+          </div>
           <div class="stat-value" id="stat-elevation">—</div>
           <div class="stat-label">Total Elevation Gain</div>
           <div class="stat-sub" id="stat-elevation-m"></div>
@@ -73,9 +82,12 @@
     <div class="col-6 col-lg-3">
       <div class="stat-card card border-0 shadow-sm h-100">
         <div class="card-body">
-          <div class="stat-icon text-strava"><i class="bi bi-trophy"></i></div>
+          <div class="d-flex align-items-start justify-content-between mb-2">
+            <div class="stat-icon text-strava mb-0"><i class="bi bi-trophy"></i></div>
+            <div id="yoy-count"></div>
+          </div>
           <div class="stat-value" id="stat-count">—</div>
-          <div class="stat-label">Total Number of Activities</div>
+          <div class="stat-label">Total Activities</div>
         </div>
       </div>
     </div>
@@ -159,11 +171,11 @@
     </div>
   </div>
 
-  <!-- Weekly trend charts -->
+  <!-- Weekly / Monthly trend charts -->
   <div class="row g-3 mb-4">
 
     <!-- Weekly distance trend -->
-    <div class="col-12 col-lg-6">
+    <div class="col-12 col-lg-4">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body">
           <h6 class="card-title text-muted mb-3">
@@ -176,8 +188,22 @@
       </div>
     </div>
 
+    <!-- Monthly distance trend -->
+    <div class="col-12 col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-bar-chart me-1"></i>Monthly Distance (miles)
+          </h6>
+          <div class="chart-wrapper">
+            <canvas id="monthly-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Weekly time trend -->
-    <div class="col-12 col-lg-6">
+    <div class="col-12 col-lg-4">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body">
           <h6 class="card-title text-muted mb-3">
