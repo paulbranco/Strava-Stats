@@ -213,5 +213,52 @@ body {
   border-color: var(--strava-orange);
 }
 
+/* ── Heatmap ──────────────────────────────────────────────────────────────── */
+.heatmap-scroll-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.heatmap-legend-cell {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.heatmap-legend-label {
+  font-size: .72rem;
+  color: #9ca3af;
+}
+
+/* ── Personal Record cards ────────────────────────────────────────────────── */
+.pr-label {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ── Small pill buttons (heatmap month filter) ────────────────────────────── */
+.pill-btn-sm {
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 500;
+  padding: .15rem .6rem;
+  border: 1.5px solid #dee2e6;
+  background: #fff;
+  color: #495057;
+  transition: all .15s;
+  line-height: 1.4;
+}
+.pill-btn-sm:hover {
+  border-color: var(--strava-orange);
+  color: var(--strava-orange);
+}
+.pill-btn-sm.active {
+  background: var(--strava-orange);
+  border-color: var(--strava-orange);
+  color: #fff;
+}
+
 /* Misc */
 .table > :not(caption) > * > * { padding: .6rem 1rem; }

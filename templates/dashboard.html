@@ -82,7 +82,82 @@
 
   </div>
 
+  <!-- ── Personal Record cards ──────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-12 col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="text-strava" style="font-size:1.2rem"><i class="bi bi-arrows-expand-vertical"></i></span>
+            <span class="pr-label text-muted">Longest Activity</span>
+          </div>
+          <div class="stat-value" id="pr-longest-distance">—</div>
+          <div class="stat-sub mt-1 text-truncate" id="pr-longest-sub"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="text-strava" style="font-size:1.2rem"><i class="bi bi-lightning-charge-fill"></i></span>
+            <span class="pr-label text-muted" id="pr-pace-label">Best Pace</span>
+          </div>
+          <div class="stat-value" id="pr-best-pace">—</div>
+          <div class="stat-sub mt-1 text-truncate" id="pr-best-pace-sub"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="text-strava" style="font-size:1.2rem"><i class="bi bi-graph-up-arrow"></i></span>
+            <span class="pr-label text-muted">Most Elevation Gain</span>
+          </div>
+          <div class="stat-value" id="pr-best-elevation">—</div>
+          <div class="stat-sub mt-1 text-truncate" id="pr-best-elevation-sub"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ── Charts ─────────────────────────────────────────────────────────── -->
+
+  <!-- Activity Calendar Heatmap -->
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-2">
+            <h6 class="card-title text-muted mb-0">
+              <i class="bi bi-calendar3 me-1"></i>Activity Calendar
+            </h6>
+            <div id="heatmap-month-filters" class="d-flex flex-wrap gap-1">
+              <button class="btn pill-btn-sm active" data-month="0">All</button>
+              <!-- Month pills injected by JS -->
+            </div>
+          </div>
+          <div class="heatmap-scroll-wrapper">
+            <div id="heatmap-container"></div>
+          </div>
+          <div class="d-flex align-items-center gap-2 mt-2">
+            <span class="heatmap-legend-label">Less</span>
+            <span class="heatmap-legend-cell" style="background:#ebedf0"></span>
+            <span class="heatmap-legend-cell" style="background:rgba(252,76,2,0.3)"></span>
+            <span class="heatmap-legend-cell" style="background:rgba(252,76,2,0.55)"></span>
+            <span class="heatmap-legend-cell" style="background:rgba(252,76,2,0.8)"></span>
+            <span class="heatmap-legend-cell" style="background:#FC4C02"></span>
+            <span class="heatmap-legend-label">More</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Weekly trend charts -->
   <div class="row g-3 mb-4">
@@ -106,7 +181,7 @@
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body">
           <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-clock me-1"></i>Weekly Time (minutes)
+            <i class="bi bi-clock me-1"></i>Weekly Time (hours)
           </h6>
           <div class="chart-wrapper">
             <canvas id="weekly-time-chart"></canvas>

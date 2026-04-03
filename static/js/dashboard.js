@@ -137,6 +137,8 @@ let weeklyChart     = null;
 let weeklyTimeChart = null;
 let sportChart      = null;
 
+const heatmapMonths = new Set(); // 1-indexed months; empty = all
+
 // ── Sport color map (built once so colors are stable across filters) ──────
 
 const CHART_COLORS = [
@@ -294,10 +296,16 @@ function updateWeeklyChart(activities) {
 
 // ── Weekly Time chart ─────────────────────────────────────────────────────
 
+function fmtHoursShort(h) {
+  if (h === 0) return '0h';
+  if (h < 1)   return Math.round(h * 60) + 'm';
+  return h % 1 === 0 ? h + 'h' : h.toFixed(1) + 'h';
+}
+
 function updateWeeklyTimeChart(activities) {
   const { labels, tooltipLabels, datasets } = buildWeeklyStackedData(
     activities,
-    a => (a.moving_time || 0) / 60   // seconds → minutes
+    a => (a.moving_time || 0) / 3600   // seconds → hours
   );
 
   if (weeklyTimeChart) { weeklyTimeChart.destroy(); weeklyTimeChart = null; }
@@ -319,12 +327,15 @@ function updateWeeklyTimeChart(activities) {
           intersect: false,
           callbacks: {
             title: items => tooltipLabels[items[0].dataIndex],
-            label: item  => item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(0)} min` : null,
+            label: item => {
+              if (item.parsed.y <= 0) return null;
+              return ` ${item.dataset.label}: ${fmtHoursShort(item.parsed.y)}`;
+            },
             footer: items => {
               const total = items.reduce((s, i) => s + i.parsed.y, 0);
-              const h = Math.floor(total / 60);
-              const m = Math.round(total % 60);
-              return h > 0 ? `Total: ${h}h ${String(m).padStart(2,'0')}m` : `Total: ${m} min`;
+              const h = Math.floor(total);
+              const m = Math.round((total - h) * 60);
+              return h > 0 ? `Total: ${h}h ${String(m).padStart(2,'0')}m` : `Total: ${m}m`;
             },
           },
         },
@@ -339,7 +350,7 @@ function updateWeeklyTimeChart(activities) {
           stacked: true,
           beginAtZero: true,
           grid: { color: '#f0f0f0' },
-          ticks: { font: { size: 11 }, callback: v => v + ' min' },
+          ticks: { font: { size: 11 }, callback: v => fmtHoursShort(v) },
         },
       },
     },
@@ -531,11 +542,204 @@ function escHtml(str) {
             .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+// ── Activity Calendar Heatmap ─────────────────────────────────────────────
+
+function buildHeatmap(activities) {
+  const container = document.getElementById('heatmap-container');
+  if (!container) return;
+
+  // Build day-count map filtered by heatmapMonths
+  const dayCounts = {};
+  for (const a of activities) {
+    const d = (a.start_date_local || a.start_date || '').slice(0, 10);
+    if (!d) continue;
+    const m1 = parseInt(d.slice(5, 7));
+    if (heatmapMonths.size > 0 && !heatmapMonths.has(m1)) continue;
+    dayCounts[d] = (dayCounts[d] || 0) + 1;
+  }
+
+  // Date range: 52 full weeks back from today's Sunday
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const thisWeekSunday = new Date(today);
+  thisWeekSunday.setDate(today.getDate() - today.getDay());
+
+  const startDate = new Date(thisWeekSunday);
+  startDate.setDate(thisWeekSunday.getDate() - 52 * 7);
+
+  const TOTAL_WEEKS = 53;
+  const CELL = 13;
+  const GAP  = 2;
+  const STEP = CELL + GAP;
+  const LEFT  = 28; // space for day labels
+  const TOP   = 20; // space for month labels
+
+  const svgW = LEFT + TOTAL_WEEKS * STEP;
+  const svgH = TOP + 7 * STEP;
+
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAY_LABELS  = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
+
+  let svg = '';
+
+  // Day labels
+  for (let d = 0; d < 7; d++) {
+    if (DAY_LABELS[d]) {
+      svg += `<text x="${LEFT - 4}" y="${TOP + d * STEP + CELL - 2}" `
+           + `font-size="10" fill="#9ca3af" text-anchor="end">${DAY_LABELS[d]}</text>`;
+    }
+  }
+
+  // Month labels + cells
+  let prevMonth = -1;
+  for (let week = 0; week < TOTAL_WEEKS; week++) {
+    const weekSunday = new Date(startDate);
+    weekSunday.setDate(startDate.getDate() + week * 7);
+    const wMonth = weekSunday.getMonth();
+
+    if (wMonth !== prevMonth) {
+      svg += `<text x="${LEFT + week * STEP}" y="13" font-size="10" fill="#9ca3af">`
+           + `${MONTH_NAMES[wMonth]}</text>`;
+      prevMonth = wMonth;
+    }
+
+    for (let day = 0; day < 7; day++) {
+      const cellDate = new Date(weekSunday);
+      cellDate.setDate(weekSunday.getDate() + day);
+      if (cellDate > today) continue;
+
+      const dateStr  = cellDate.toISOString().slice(0, 10);
+      const count    = dayCounts[dateStr] || 0;
+      const cellM1   = cellDate.getMonth() + 1;
+      const inFilter = heatmapMonths.size === 0 || heatmapMonths.has(cellM1);
+
+      let fill;
+      if (!inFilter || count === 0) {
+        fill = '#ebedf0';
+      } else if (count === 1) {
+        fill = 'rgba(252,76,2,0.3)';
+      } else if (count <= 3) {
+        fill = 'rgba(252,76,2,0.55)';
+      } else if (count <= 6) {
+        fill = 'rgba(252,76,2,0.8)';
+      } else {
+        fill = '#FC4C02';
+      }
+
+      const x = LEFT + week * STEP;
+      const y = TOP  + day  * STEP;
+      const title = count > 0
+        ? `${count} activit${count === 1 ? 'y' : 'ies'} — ${dateStr}`
+        : `No activities — ${dateStr}`;
+
+      svg += `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="2" fill="${fill}">`
+           + `<title>${escHtml(title)}</title></rect>`;
+    }
+  }
+
+  container.innerHTML = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+}
+
+function initHeatmapMonthFilter() {
+  const container = document.getElementById('heatmap-month-filters');
+  if (!container) return;
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  MONTHS.forEach((name, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn pill-btn-sm';
+    btn.dataset.month = i + 1;
+    btn.textContent = name;
+    btn.addEventListener('click', () => {
+      const m = i + 1;
+      if (heatmapMonths.has(m)) {
+        heatmapMonths.delete(m);
+        btn.classList.remove('active');
+      } else {
+        heatmapMonths.add(m);
+        btn.classList.add('active');
+      }
+      const allBtn = container.querySelector('[data-month="0"]');
+      if (allBtn) allBtn.classList.toggle('active', heatmapMonths.size === 0);
+      buildHeatmap(getFilteredActivities());
+    });
+    container.appendChild(btn);
+  });
+
+  const allBtn = container.querySelector('[data-month="0"]');
+  if (allBtn) {
+    allBtn.addEventListener('click', () => {
+      heatmapMonths.clear();
+      container.querySelectorAll('.pill-btn-sm').forEach(b => b.classList.remove('active'));
+      allBtn.classList.add('active');
+      buildHeatmap(getFilteredActivities());
+    });
+  }
+}
+
+// ── Personal Record cards ─────────────────────────────────────────────────
+
+function updatePRCards(activities) {
+  // Longest activity (non-swim, in miles)
+  const nonSwim = activities.filter(a => (a.sport_type || a.type) !== 'Swim' && (a.distance || 0) > 0);
+  const longest = nonSwim.reduce((best, a) => (!best || a.distance > best.distance) ? a : best, null);
+
+  const longestEl  = document.getElementById('pr-longest-distance');
+  const longestSub = document.getElementById('pr-longest-sub');
+  if (longest) {
+    longestEl.textContent  = fmtMiles(metersToMiles(longest.distance));
+    longestSub.textContent = `${escHtml(longest.name || 'Activity')} · ${activityDate(longest)}`;
+  } else {
+    longestEl.textContent  = '—';
+    longestSub.textContent = '';
+  }
+
+  // Best pace: prefer runs, fall back to rides
+  const runTypes  = ['Run','TrailRun','VirtualRun'];
+  const rideTypes = ['Ride','VirtualRide','MountainBikeRide','EBikeRide'];
+  const runs  = activities.filter(a => runTypes.includes(a.sport_type || a.type) && (a.average_speed || 0) > 0);
+  const rides = activities.filter(a => rideTypes.includes(a.sport_type || a.type) && (a.average_speed || 0) > 0);
+  const fastestRun  = runs.reduce((best, a)  => (!best || a.average_speed > best.average_speed) ? a : best, null);
+  const fastestRide = rides.reduce((best, a) => (!best || a.average_speed > best.average_speed) ? a : best, null);
+  const bestPaceAct = fastestRun || fastestRide;
+
+  const paceEl    = document.getElementById('pr-best-pace');
+  const paceSub   = document.getElementById('pr-best-pace-sub');
+  const paceLabel = document.getElementById('pr-pace-label');
+  if (bestPaceAct) {
+    const sport = bestPaceAct.sport_type || bestPaceAct.type || '';
+    if (paceLabel) paceLabel.textContent = runTypes.includes(sport) ? 'Best Run Pace' : 'Best Ride Speed';
+    paceEl.textContent  = fmtPace(bestPaceAct);
+    paceSub.textContent = `${escHtml(bestPaceAct.name || 'Activity')} · ${activityDate(bestPaceAct)}`;
+  } else {
+    if (paceLabel) paceLabel.textContent = 'Best Pace';
+    paceEl.textContent  = '—';
+    paceSub.textContent = '';
+  }
+
+  // Biggest elevation gain (single activity)
+  const bigElev = activities.filter(a => (a.total_elevation_gain || 0) > 0)
+    .reduce((best, a) => (!best || a.total_elevation_gain > best.total_elevation_gain) ? a : best, null);
+
+  const elevEl  = document.getElementById('pr-best-elevation');
+  const elevSub = document.getElementById('pr-best-elevation-sub');
+  if (bigElev) {
+    elevEl.textContent  = fmtFeet(metersToFeet(bigElev.total_elevation_gain));
+    elevSub.textContent = `${escHtml(bigElev.name || 'Activity')} · ${activityDate(bigElev)}`;
+  } else {
+    elevEl.textContent  = '—';
+    elevSub.textContent = '';
+  }
+}
+
 // ── Update all ────────────────────────────────────────────────────────────
 
 function updateAll() {
   const filtered = getFilteredActivities();
   updateStats(filtered);
+  updatePRCards(filtered);
+  buildHeatmap(filtered);
   updateWeeklyChart(filtered);
   updateWeeklyTimeChart(filtered);
   updateSportChart(filtered);
@@ -661,6 +865,7 @@ function initAllPills() {
 (function init() {
   buildSportPills();
   initAllPills();
+  initHeatmapMonthFilter();
   initSortHandlers();
   initSearch();
   initPageSize();
