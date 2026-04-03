@@ -175,7 +175,7 @@
   <div class="row g-3 mb-4">
 
     <!-- Weekly distance trend -->
-    <div class="col-12 col-lg-4">
+    <div class="col-12 col-lg-3">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body">
           <h6 class="card-title text-muted mb-3">
@@ -189,7 +189,7 @@
     </div>
 
     <!-- Monthly distance trend -->
-    <div class="col-12 col-lg-4">
+    <div class="col-12 col-lg-3">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body">
           <h6 class="card-title text-muted mb-3">
@@ -203,7 +203,7 @@
     </div>
 
     <!-- Weekly time trend -->
-    <div class="col-12 col-lg-4">
+    <div class="col-12 col-lg-3">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body">
           <h6 class="card-title text-muted mb-3">
@@ -216,12 +216,26 @@
       </div>
     </div>
 
+    <!-- Monthly time trend -->
+    <div class="col-12 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-clock-history me-1"></i>Monthly Time (hours)
+          </h6>
+          <div class="chart-wrapper">
+            <canvas id="monthly-time-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Sport breakdown -->
+  <!-- Sport breakdown donuts -->
   <div class="row g-3 mb-4">
 
-    <!-- Sport breakdown donut -->
+    <!-- Distance by Sport -->
     <div class="col-12 col-lg-4">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-body d-flex flex-column">
@@ -230,6 +244,53 @@
           </h6>
           <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
             <canvas id="sport-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time by Sport -->
+    <div class="col-12 col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body d-flex flex-column">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-pie-chart-fill me-1"></i>Time by Sport
+          </h6>
+          <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
+            <canvas id="sport-time-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Pace / Speed + Elevation Gain -->
+  <div class="row g-3 mb-4">
+
+    <!-- Avg Speed trend -->
+    <div class="col-12 col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-speedometer2 me-1"></i>Avg Speed by Week (mph)
+          </h6>
+          <div class="chart-wrapper">
+            <canvas id="pace-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly Elevation Gain -->
+    <div class="col-12 col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="card-title text-muted mb-3">
+            <i class="bi bi-triangle me-1"></i>Weekly Elevation Gain (ft)
+          </h6>
+          <div class="chart-wrapper">
+            <canvas id="elevation-chart"></canvas>
           </div>
         </div>
       </div>
