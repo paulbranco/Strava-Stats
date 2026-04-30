@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — Strava Stats{% endblock %}
+{% block title %}Dashboard — Athlete Stats{% endblock %}
 
 {% block content %}
 <!-- Activity data blob consumed by dashboard.js -->
@@ -23,7 +23,7 @@
       </div>
     </div>
 
-    <!-- Sport filter -->
+    <!-- Sport filter + Powered by Strava -->
     <div class="d-flex flex-wrap align-items-center gap-2">
       <span class="filter-label text-muted me-1">
         <i class="bi bi-activity me-1"></i>Sport
@@ -32,6 +32,14 @@
         <button class="btn pill-btn active" data-sport="all">All Sports</button>
         <!-- Sport pills injected by JS -->
       </div>
+      <a href="https://www.strava.com" target="_blank" rel="noopener"
+         class="powered-by-strava ms-auto d-flex align-items-center gap-1 text-decoration-none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066l-2.084 4.116z"/>
+          <path d="M7.564 0L1 12.169h3.894l2.67-5.239 2.669 5.239h3.894L7.564 0z"/>
+        </svg>
+        Powered by Strava
+      </a>
     </div>
   </div>
 

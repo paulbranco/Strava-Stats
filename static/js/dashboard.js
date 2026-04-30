@@ -508,10 +508,9 @@ function updateTable(activities) {
     return `<tr>
       <td class="text-muted" style="white-space:nowrap">${date}</td>
       <td>
+        <div class="fw-semibold">${escHtml(name)}</div>
         <a href="https://www.strava.com/activities/${a.id}" target="_blank"
-           rel="noopener" class="text-decoration-none fw-semibold text-dark">
-          ${escHtml(name)}
-        </a>
+           rel="noopener" class="view-on-strava">View on Strava</a>
       </td>
       <td><span class="sport-badge ${sportBadgeClass(sport)}">${sportIcon(sport)} ${sport}</span></td>
       <td class="text-end text-nowrap">${dist}</td>

@@ -213,6 +213,25 @@ body {
   border-color: var(--strava-orange);
 }
 
+/* ── Strava brand compliance ──────────────────────────────────────────────── */
+.powered-by-strava {
+  font-size: .72rem;
+  font-weight: 600;
+  color: #adb5bd;
+  letter-spacing: .02em;
+  white-space: nowrap;
+  transition: color .15s;
+}
+.powered-by-strava:hover { color: var(--strava-orange); }
+
+.view-on-strava {
+  font-size: .73rem;
+  font-weight: 600;
+  color: var(--strava-orange);
+  text-decoration: none;
+}
+.view-on-strava:hover { text-decoration: underline; color: var(--strava-orange-hover); }
+
 /* ── YoY badges ───────────────────────────────────────────────────────────── */
 .yoy-badge {
   display: inline-block;
