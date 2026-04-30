@@ -214,15 +214,9 @@ body {
 }
 
 /* ── Strava brand compliance ──────────────────────────────────────────────── */
-.powered-by-strava {
-  font-size: .72rem;
-  font-weight: 600;
-  color: #adb5bd;
-  letter-spacing: .02em;
-  white-space: nowrap;
-  transition: color .15s;
-}
-.powered-by-strava:hover { color: var(--strava-orange); }
+.powered-by-strava { opacity: .75; transition: opacity .15s; }
+.powered-by-strava:hover { opacity: 1; }
+.powered-by-strava-img { height: 24px; width: auto; display: block; }
 
 .view-on-strava {
   font-size: .73rem;
