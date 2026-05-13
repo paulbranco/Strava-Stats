@@ -25,8 +25,8 @@ function metersToMiles(m) { return m * 0.000621371; }
 function metersToFeet(m)  { return m * 3.28084; }
 function metersToYards(m) { return m * 1.09361; }
 
-function fmtMiles(miles) { return miles.toFixed(1) + ' mi'; }
-function fmtKm(m)        { return (m / 1000).toFixed(1) + ' km'; }
+function fmtMiles(miles) { return miles.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' mi'; }
+function fmtKm(m)        { return (m / 1000).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km'; }
 function fmtFeet(ft)     { return Math.round(ft).toLocaleString() + ' ft'; }
 function fmtMeters(m)    { return Math.round(m).toLocaleString() + ' m'; }
 function fmtYards(yd)    { return Math.round(yd).toLocaleString() + ' yd'; }
@@ -306,15 +306,15 @@ function updateWeeklyChart(activities) {
             title: items => tooltipLabels[items[0].dataIndex],
             label: item => {
               if (item.dataset.label === 'Rolling Avg') {
-                return ` Rolling Avg: ${item.parsed.y.toFixed(1)} mi/wk`;
+                return ` Rolling Avg: ${fmtMiles(item.parsed.y).replace(' mi', '')} mi/wk`;
               }
-              return item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi` : null;
+              return item.parsed.y > 0 ? ` ${item.dataset.label}: ${fmtMiles(item.parsed.y)}` : null;
             },
             footer: items => {
               const total = items
                 .filter(i => i.dataset.label !== 'Rolling Avg')
                 .reduce((s, i) => s + i.parsed.y, 0);
-              return `Total: ${total.toFixed(1)} mi`;
+              return `Total: ${fmtMiles(total)}`;
             },
           },
         },
@@ -329,7 +329,7 @@ function updateWeeklyChart(activities) {
           stacked: true,
           beginAtZero: true,
           grid: { color: '#f0f0f0' },
-          ticks: { font: { size: 11 }, callback: v => v + ' mi' },
+          ticks: { font: { size: 11 }, callback: v => v.toLocaleString('en-US') + ' mi' },
         },
       },
     },
@@ -438,7 +438,7 @@ function updateSportChart(activities) {
           labels: { font: { size: 11 }, boxWidth: 12, padding: 8 },
         },
         tooltip: {
-          callbacks: { label: ctx => ` ${ctx.parsed.toFixed(1)} mi` },
+          callbacks: { label: ctx => ` ${fmtMiles(ctx.parsed)}` },
         },
       },
     },
@@ -657,15 +657,15 @@ function updateMonthlyChart(activities) {
           callbacks: {
             label: item => {
               if (item.dataset.label === 'Rolling Avg') {
-                return ` Rolling Avg: ${item.parsed.y.toFixed(1)} mi/mo`;
+                return ` Rolling Avg: ${fmtMiles(item.parsed.y).replace(' mi', '')} mi/mo`;
               }
-              return item.parsed.y > 0 ? ` ${item.dataset.label}: ${item.parsed.y.toFixed(1)} mi` : null;
+              return item.parsed.y > 0 ? ` ${item.dataset.label}: ${fmtMiles(item.parsed.y)}` : null;
             },
             footer: items => {
               const total = items
                 .filter(i => i.dataset.label !== 'Rolling Avg')
                 .reduce((s, i) => s + i.parsed.y, 0);
-              return `Total: ${total.toFixed(1)} mi`;
+              return `Total: ${fmtMiles(total)}`;
             },
           },
         },
@@ -680,7 +680,7 @@ function updateMonthlyChart(activities) {
           stacked: true,
           beginAtZero: true,
           grid: { color: '#f0f0f0' },
-          ticks: { font: { size: 11 }, callback: v => v + ' mi' },
+          ticks: { font: { size: 11 }, callback: v => v.toLocaleString('en-US') + ' mi' },
         },
       },
     },
