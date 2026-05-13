@@ -132,6 +132,7 @@ let sortColumn   = 'date';
 let sortDir      = 'desc';
 let currentPage  = 1;
 let pageSize     = 25;
+let activePage   = 'overview';
 
 let weeklyChart      = null;
 let weeklyTimeChart  = null;
@@ -419,14 +420,8 @@ function updateSportChart(activities) {
   const values = sorted.map(([, v]) => +v.toFixed(2));
   const colors = sorted.map(([s]) => sportColor(s));
 
+  if (sportChart) { sportChart.destroy(); sportChart = null; }
   const ctx = document.getElementById('sport-chart').getContext('2d');
-  if (sportChart) {
-    sportChart.data.labels                        = labels;
-    sportChart.data.datasets[0].data              = values;
-    sportChart.data.datasets[0].backgroundColor   = colors;
-    sportChart.update();
-    return;
-  }
   sportChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
@@ -757,14 +752,8 @@ function updateSportTimeChart(activities) {
   const values = sorted.map(([, v]) => +(v / 3600).toFixed(2));   // hours
   const colors = sorted.map(([s]) => sportColor(s));
 
+  if (sportTimeChart) { sportTimeChart.destroy(); sportTimeChart = null; }
   const ctx = document.getElementById('sport-time-chart').getContext('2d');
-  if (sportTimeChart) {
-    sportTimeChart.data.labels                      = labels;
-    sportTimeChart.data.datasets[0].data            = values;
-    sportTimeChart.data.datasets[0].backgroundColor = colors;
-    sportTimeChart.update();
-    return;
-  }
   sportTimeChart = new Chart(ctx, {
     type: 'doughnut',
     data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
@@ -1161,23 +1150,45 @@ function updatePRCards(activities) {
   }
 }
 
+// ── Page navigation ───────────────────────────────────────────────────────
+
+function showPage(page) {
+  const valid = ['overview', 'trends', 'prs', 'activities'];
+  if (!valid.includes(page)) page = 'overview';
+  activePage = page;
+  history.replaceState(null, '', '#' + page);
+  document.querySelectorAll('[data-page]').forEach(el => {
+    el.classList.toggle('d-none', el.dataset.page !== page);
+  });
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    link.classList.toggle('active', link.dataset.page === page);
+  });
+  currentPage = 1;
+  updateAll();
+}
+
 // ── Update all ────────────────────────────────────────────────────────────
 
 function updateAll() {
   const filtered = getFilteredActivities();
-  updateStats(filtered);
-  updateYoY();
-  updatePRCards(filtered);
-  buildHeatmap(filtered);
-  updateWeeklyChart(filtered);
-  updateMonthlyChart(filtered);
-  updateWeeklyTimeChart(filtered);
-  updateMonthlyTimeChart(filtered);
-  updateSportChart(filtered);
-  updateSportTimeChart(filtered);
-  updatePaceChart(filtered);
-  updateElevationChart(filtered);
-  updateTable(filtered);
+  if (activePage === 'overview') {
+    updateStats(filtered);
+    updateYoY();
+    buildHeatmap(filtered);
+    updateSportChart(filtered);
+    updateSportTimeChart(filtered);
+  } else if (activePage === 'trends') {
+    updateWeeklyChart(filtered);
+    updateMonthlyChart(filtered);
+    updateWeeklyTimeChart(filtered);
+    updateMonthlyTimeChart(filtered);
+    updatePaceChart(filtered);
+    updateElevationChart(filtered);
+  } else if (activePage === 'prs') {
+    updatePRCards(filtered);
+  } else if (activePage === 'activities') {
+    updateTable(filtered);
+  }
 }
 
 // ── Date range filter ─────────────────────────────────────────────────────
@@ -1304,5 +1315,14 @@ function initAllPills() {
   initSearch();
   initPageSize();
   initDateRangeFilter();
-  updateAll();
+
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      showPage(link.dataset.page);
+    });
+  });
+
+  const hash = window.location.hash.slice(1);
+  showPage(['overview', 'trends', 'prs', 'activities'].includes(hash) ? hash : 'overview');
 })();

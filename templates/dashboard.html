@@ -5,357 +5,401 @@
 <!-- Activity data blob consumed by dashboard.js -->
 <script id="activities-data" type="application/json">{{ activities_json | safe }}</script>
 
-<div class="container-fluid px-4 py-4">
+<div class="app-layout">
 
-  <!-- ── Filter bar ─────────────────────────────────────────────────────── -->
-  <div class="card border-0 shadow-sm mb-4 p-3">
+  <!-- ── Sidebar nav ─────────────────────────────────────────────────────── -->
+  <nav class="sidebar" id="sidebar">
+    <ul class="sidebar-nav">
+      <li>
+        <a class="sidebar-link active" data-page="overview" href="#overview">
+          <i class="bi bi-grid-1x2-fill"></i>Overview
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-link" data-page="trends" href="#trends">
+          <i class="bi bi-bar-chart-line-fill"></i>Trends
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-link" data-page="prs" href="#prs">
+          <i class="bi bi-trophy-fill"></i>PRs
+        </a>
+      </li>
+      <li>
+        <a class="sidebar-link" data-page="activities" href="#activities">
+          <i class="bi bi-table"></i>All Activities
+        </a>
+      </li>
+    </ul>
+  </nav>
 
-    <!-- Date range filter -->
-    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-      <span class="filter-label text-muted me-1">
-        <i class="bi bi-calendar3 me-1"></i>Date Range
-      </span>
+  <!-- ── Main content ───────────────────────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- Filter bar (always visible on all pages) -->
+    <div class="card border-0 shadow-sm mb-4 p-3">
+
+      <!-- Date range filter -->
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <span class="filter-label text-muted me-1">
+          <i class="bi bi-calendar3 me-1"></i>Date Range
+        </span>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <input type="date" id="date-start" class="form-control form-control-sm date-filter-input" title="Start date" />
+          <span class="text-muted small">to</span>
+          <input type="date" id="date-end" class="form-control form-control-sm date-filter-input" title="End date" />
+          <button class="btn pill-btn" id="date-clear-btn" style="display:none">Clear</button>
+        </div>
+      </div>
+
+      <!-- Sport filter + Powered by Strava -->
       <div class="d-flex flex-wrap align-items-center gap-2">
-        <input type="date" id="date-start" class="form-control form-control-sm date-filter-input" title="Start date" />
-        <span class="text-muted small">to</span>
-        <input type="date" id="date-end" class="form-control form-control-sm date-filter-input" title="End date" />
-        <button class="btn pill-btn" id="date-clear-btn" style="display:none">Clear</button>
-      </div>
-    </div>
-
-    <!-- Sport filter + Powered by Strava -->
-    <div class="d-flex flex-wrap align-items-center gap-2">
-      <span class="filter-label text-muted me-1">
-        <i class="bi bi-activity me-1"></i>Sport
-      </span>
-      <div id="sport-filters" class="d-flex flex-wrap gap-2">
-        <button class="btn pill-btn active" data-sport="all">All Sports</button>
-        <!-- Sport pills injected by JS -->
-      </div>
-      <a href="https://www.strava.com" target="_blank" rel="noopener"
-         class="powered-by-strava ms-auto">
-        <img src="{{ url_for('static', filename='images/powered-by-strava.png') }}"
-             alt="Powered by Strava" class="powered-by-strava-img" />
-      </a>
-    </div>
-  </div>
-
-  <!-- ── Summary cards ──────────────────────────────────────────────────── -->
-  <div class="row g-3 mb-4">
-
-    <div class="col-6 col-lg-3">
-      <div class="stat-card card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-start justify-content-between mb-2">
-            <div class="stat-icon text-strava mb-0"><i class="bi bi-signpost-split"></i></div>
-            <div id="yoy-distance"></div>
-          </div>
-          <div class="stat-value" id="stat-distance">—</div>
-          <div class="stat-label">Total Distance</div>
-          <div class="stat-sub" id="stat-distance-km"></div>
+        <span class="filter-label text-muted me-1">
+          <i class="bi bi-activity me-1"></i>Sport
+        </span>
+        <div id="sport-filters" class="d-flex flex-wrap gap-2">
+          <button class="btn pill-btn active" data-sport="all">All Sports</button>
+          <!-- Sport pills injected by JS -->
         </div>
+        <a href="https://www.strava.com" target="_blank" rel="noopener"
+           class="powered-by-strava ms-auto">
+          <img src="{{ url_for('static', filename='images/powered-by-strava.png') }}"
+               alt="Powered by Strava" class="powered-by-strava-img" />
+        </a>
       </div>
     </div>
 
-    <div class="col-6 col-lg-3">
-      <div class="stat-card card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-start justify-content-between mb-2">
-            <div class="stat-icon text-strava mb-0"><i class="bi bi-clock"></i></div>
-            <div id="yoy-time"></div>
-          </div>
-          <div class="stat-value" id="stat-time">—</div>
-          <div class="stat-label">Total Moving Time</div>
-        </div>
-      </div>
-    </div>
+    <!-- ════════════════════════════════════════════════════════════════════
+         Overview page
+         ════════════════════════════════════════════════════════════════════ -->
+    <div data-page="overview">
 
-    <div class="col-6 col-lg-3">
-      <div class="stat-card card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-start justify-content-between mb-2">
-            <div class="stat-icon text-strava mb-0"><i class="bi bi-graph-up"></i></div>
-            <div id="yoy-elevation"></div>
-          </div>
-          <div class="stat-value" id="stat-elevation">—</div>
-          <div class="stat-label">Total Elevation Gain</div>
-          <div class="stat-sub" id="stat-elevation-m"></div>
-        </div>
-      </div>
-    </div>
+      <!-- Stat cards -->
+      <div class="row g-3 mb-4">
 
-    <div class="col-6 col-lg-3">
-      <div class="stat-card card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-start justify-content-between mb-2">
-            <div class="stat-icon text-strava mb-0"><i class="bi bi-trophy"></i></div>
-            <div id="yoy-count"></div>
-          </div>
-          <div class="stat-value" id="stat-count">—</div>
-          <div class="stat-label">Total Activities</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── Personal Record cards ──────────────────────────────────────────── -->
-  <div class="row g-3 mb-4">
-
-    <div class="col-12 col-md-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <span class="text-strava" style="font-size:1.2rem"><i class="bi bi-arrows-expand-vertical"></i></span>
-            <span class="pr-label text-muted">Longest Activity</span>
-          </div>
-          <div class="stat-value" id="pr-longest-distance">—</div>
-          <div class="stat-sub mt-1 text-truncate" id="pr-longest-sub"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <span class="text-strava" style="font-size:1.2rem"><i class="bi bi-lightning-charge-fill"></i></span>
-            <span class="pr-label text-muted" id="pr-pace-label">Best Pace</span>
-          </div>
-          <div class="stat-value" id="pr-best-pace">—</div>
-          <div class="stat-sub mt-1 text-truncate" id="pr-best-pace-sub"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <span class="text-strava" style="font-size:1.2rem"><i class="bi bi-graph-up-arrow"></i></span>
-            <span class="pr-label text-muted">Most Elevation Gain</span>
-          </div>
-          <div class="stat-value" id="pr-best-elevation">—</div>
-          <div class="stat-sub mt-1 text-truncate" id="pr-best-elevation-sub"></div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── Charts ─────────────────────────────────────────────────────────── -->
-
-  <!-- Activity Calendar + Sport donuts -->
-  <div class="row g-3 mb-4">
-
-    <!-- Activity Calendar Heatmap -->
-    <div class="col-12 col-lg-6">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-2">
-            <h6 class="card-title text-muted mb-0">
-              <i class="bi bi-calendar3 me-1"></i>Activity Calendar
-            </h6>
-            <div id="heatmap-month-filters" class="d-flex flex-wrap gap-1">
-              <button class="btn pill-btn-sm active" data-month="0">All</button>
-              <!-- Month pills injected by JS -->
+        <div class="col-6 col-lg-3">
+          <div class="stat-card card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-start justify-content-between mb-2">
+                <div class="stat-icon text-strava mb-0"><i class="bi bi-signpost-split"></i></div>
+                <div id="yoy-distance"></div>
+              </div>
+              <div class="stat-value" id="stat-distance">—</div>
+              <div class="stat-label">Total Distance</div>
+              <div class="stat-sub" id="stat-distance-km"></div>
             </div>
           </div>
-          <div class="heatmap-scroll-wrapper">
-            <div id="heatmap-container"></div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+          <div class="stat-card card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-start justify-content-between mb-2">
+                <div class="stat-icon text-strava mb-0"><i class="bi bi-clock"></i></div>
+                <div id="yoy-time"></div>
+              </div>
+              <div class="stat-value" id="stat-time">—</div>
+              <div class="stat-label">Total Moving Time</div>
+            </div>
           </div>
-          <div class="d-flex align-items-center gap-2 mt-2">
-            <span class="heatmap-legend-label">Less</span>
-            <span class="heatmap-legend-cell" style="background:#ebedf0"></span>
-            <span class="heatmap-legend-cell" style="background:rgba(252,76,2,0.3)"></span>
-            <span class="heatmap-legend-cell" style="background:rgba(252,76,2,0.55)"></span>
-            <span class="heatmap-legend-cell" style="background:rgba(252,76,2,0.8)"></span>
-            <span class="heatmap-legend-cell" style="background:#FC4C02"></span>
-            <span class="heatmap-legend-label">More</span>
+        </div>
+
+        <div class="col-6 col-lg-3">
+          <div class="stat-card card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-start justify-content-between mb-2">
+                <div class="stat-icon text-strava mb-0"><i class="bi bi-graph-up"></i></div>
+                <div id="yoy-elevation"></div>
+              </div>
+              <div class="stat-value" id="stat-elevation">—</div>
+              <div class="stat-label">Total Elevation Gain</div>
+              <div class="stat-sub" id="stat-elevation-m"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+          <div class="stat-card card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-start justify-content-between mb-2">
+                <div class="stat-icon text-strava mb-0"><i class="bi bi-trophy"></i></div>
+                <div id="yoy-count"></div>
+              </div>
+              <div class="stat-value" id="stat-count">—</div>
+              <div class="stat-label">Total Activities</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Activity Calendar + Sport donuts -->
+      <div class="row g-3">
+
+        <!-- Activity Calendar Heatmap -->
+        <div class="col-12 col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-2">
+                <h6 class="card-title text-muted mb-0">
+                  <i class="bi bi-calendar3 me-1"></i>Activity Calendar
+                </h6>
+                <div id="heatmap-month-filters" class="d-flex flex-wrap gap-1">
+                  <button class="btn pill-btn-sm active" data-month="0">All</button>
+                  <!-- Month pills injected by JS -->
+                </div>
+              </div>
+              <div class="heatmap-scroll-wrapper">
+                <div id="heatmap-container"></div>
+              </div>
+              <div class="d-flex align-items-center gap-2 mt-2">
+                <span class="heatmap-legend-label">Less</span>
+                <span class="heatmap-legend-cell" style="background:#ebedf0"></span>
+                <span class="heatmap-legend-cell" style="background:rgba(252,76,2,0.3)"></span>
+                <span class="heatmap-legend-cell" style="background:rgba(252,76,2,0.55)"></span>
+                <span class="heatmap-legend-cell" style="background:rgba(252,76,2,0.8)"></span>
+                <span class="heatmap-legend-cell" style="background:#FC4C02"></span>
+                <span class="heatmap-legend-label">More</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Distance by Sport -->
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+              <h6 class="card-title text-muted mb-3">
+                <i class="bi bi-pie-chart me-1"></i>Distance by Sport (miles)
+              </h6>
+              <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
+                <canvas id="sport-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Time by Sport -->
+        <div class="col-12 col-sm-6 col-lg-3">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex flex-column">
+              <h6 class="card-title text-muted mb-3">
+                <i class="bi bi-pie-chart-fill me-1"></i>Time by Sport
+              </h6>
+              <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
+                <canvas id="sport-time-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /overview -->
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         Trends page
+         ════════════════════════════════════════════════════════════════════ -->
+    <div data-page="trends" class="d-none">
+
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted mb-3">
+                <i class="bi bi-bar-chart-line me-1"></i>Weekly Distance (miles)
+              </h6>
+              <div class="chart-wrapper">
+                <canvas id="weekly-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted mb-3">
+                <i class="bi bi-bar-chart me-1"></i>Monthly Distance (miles)
+              </h6>
+              <div class="chart-wrapper">
+                <canvas id="monthly-chart"></canvas>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Distance by Sport -->
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-pie-chart me-1"></i>Distance by Sport (miles)
-          </h6>
-          <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
-            <canvas id="sport-chart"></canvas>
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted mb-3">
+                <i class="bi bi-clock me-1"></i>Weekly Time (hours)
+              </h6>
+              <div class="chart-wrapper">
+                <canvas id="weekly-time-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted mb-3">
+                <i class="bi bi-clock-history me-1"></i>Monthly Time (hours)
+              </h6>
+              <div class="chart-wrapper">
+                <canvas id="monthly-time-chart"></canvas>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Time by Sport -->
-    <div class="col-12 col-sm-6 col-lg-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-pie-chart-fill me-1"></i>Time by Sport
-          </h6>
-          <div class="chart-wrapper-sm flex-grow-1 d-flex align-items-center justify-content-center">
-            <canvas id="sport-time-chart"></canvas>
+      <div class="row g-3">
+        <div class="col-12 col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted mb-3">
+                <i class="bi bi-speedometer2 me-1"></i>Avg Speed by Week (mph)
+              </h6>
+              <div class="chart-wrapper">
+                <canvas id="pace-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-title text-muted mb-3">
+                <i class="bi bi-triangle me-1"></i>Weekly Elevation Gain (ft)
+              </h6>
+              <div class="chart-wrapper">
+                <canvas id="elevation-chart"></canvas>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-  </div>
-  <div class="row g-3 mb-4">
+    </div><!-- /trends -->
 
-    <!-- Weekly distance trend -->
-    <div class="col-12 col-lg-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-bar-chart-line me-1"></i>Weekly Distance (miles)
-          </h6>
-          <div class="chart-wrapper">
-            <canvas id="weekly-chart"></canvas>
+    <!-- ════════════════════════════════════════════════════════════════════
+         PRs page
+         ════════════════════════════════════════════════════════════════════ -->
+    <div data-page="prs" class="d-none">
+
+      <div class="row g-3">
+
+        <div class="col-12 col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="text-strava" style="font-size:1.2rem"><i class="bi bi-arrows-expand-vertical"></i></span>
+                <span class="pr-label text-muted">Longest Activity</span>
+              </div>
+              <div class="stat-value" id="pr-longest-distance">—</div>
+              <div class="stat-sub mt-1 text-truncate" id="pr-longest-sub"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="text-strava" style="font-size:1.2rem"><i class="bi bi-lightning-charge-fill"></i></span>
+                <span class="pr-label text-muted" id="pr-pace-label">Best Pace</span>
+              </div>
+              <div class="stat-value" id="pr-best-pace">—</div>
+              <div class="stat-sub mt-1 text-truncate" id="pr-best-pace-sub"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="text-strava" style="font-size:1.2rem"><i class="bi bi-graph-up-arrow"></i></span>
+                <span class="pr-label text-muted">Most Elevation Gain</span>
+              </div>
+              <div class="stat-value" id="pr-best-elevation">—</div>
+              <div class="stat-sub mt-1 text-truncate" id="pr-best-elevation-sub"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /prs -->
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         All Activities page
+         ════════════════════════════════════════════════════════════════════ -->
+    <div data-page="activities" class="d-none">
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body px-0 pb-0">
+          <div class="d-flex align-items-center justify-content-between px-3 mb-2 flex-wrap gap-2">
+            <h6 class="card-title text-muted mb-0">
+              <i class="bi bi-table me-1"></i>Activities
+              <span class="badge bg-secondary ms-1 fw-normal" id="table-count">0</span>
+            </h6>
+            <div class="d-flex align-items-center gap-2 flex-nowrap">
+              <input id="search-input" type="search" class="form-control form-control-sm"
+                     placeholder="Search name…" style="width:180px;flex-shrink:0" />
+              <label for="page-size-select" class="text-muted mb-0 flex-shrink-0" style="font-size:.85rem">Show</label>
+              <select id="page-size-select" class="form-select form-select-sm flex-shrink-0" style="width:auto">
+                <option value="10">10</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+              </select>
+              <span class="text-muted mb-0 flex-shrink-0" style="font-size:.85rem">entries</span>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="activity-table">
+              <thead class="table-light">
+                <tr>
+                  <th class="sortable" data-col="date">Date <i class="bi bi-chevron-expand sort-icon"></i></th>
+                  <th>Name</th>
+                  <th class="sortable" data-col="sport">Sport <i class="bi bi-chevron-expand sort-icon"></i></th>
+                  <th class="sortable text-end" data-col="distance">Distance <i class="bi bi-chevron-expand sort-icon"></i></th>
+                  <th class="sortable text-end" data-col="time">Time <i class="bi bi-chevron-expand sort-icon"></i></th>
+                  <th class="sortable text-end" data-col="pace">Pace / Speed <i class="bi bi-chevron-expand sort-icon"></i></th>
+                  <th class="sortable text-end" data-col="elevation">Elev Gain <i class="bi bi-chevron-expand sort-icon"></i></th>
+                </tr>
+              </thead>
+              <tbody id="activity-tbody">
+                <tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination bar -->
+          <div class="d-flex align-items-center justify-content-between px-3 py-2 border-top" id="pagination-bar">
+            <div class="text-muted" style="font-size:.85rem" id="pagination-info"></div>
+            <nav aria-label="Activities pagination">
+              <ul class="pagination pagination-sm mb-0" id="pagination-controls"></ul>
+            </nav>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Monthly distance trend -->
-    <div class="col-12 col-lg-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-bar-chart me-1"></i>Monthly Distance (miles)
-          </h6>
-          <div class="chart-wrapper">
-            <canvas id="monthly-chart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Weekly time trend -->
-    <div class="col-12 col-lg-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-clock me-1"></i>Weekly Time (hours)
-          </h6>
-          <div class="chart-wrapper">
-            <canvas id="weekly-time-chart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Monthly time trend -->
-    <div class="col-12 col-lg-3">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-clock-history me-1"></i>Monthly Time (hours)
-          </h6>
-          <div class="chart-wrapper">
-            <canvas id="monthly-time-chart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Pace / Speed + Elevation Gain -->
-  <div class="row g-3 mb-4">
-
-    <!-- Avg Speed trend -->
-    <div class="col-12 col-lg-6">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-speedometer2 me-1"></i>Avg Speed by Week (mph)
-          </h6>
-          <div class="chart-wrapper">
-            <canvas id="pace-chart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Weekly Elevation Gain -->
-    <div class="col-12 col-lg-6">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body">
-          <h6 class="card-title text-muted mb-3">
-            <i class="bi bi-triangle me-1"></i>Weekly Elevation Gain (ft)
-          </h6>
-          <div class="chart-wrapper">
-            <canvas id="elevation-chart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── Activity table ─────────────────────────────────────────────────── -->
-  <div class="card border-0 shadow-sm">
-    <div class="card-body px-0 pb-0">
-      <div class="d-flex align-items-center justify-content-between px-3 mb-2 flex-wrap gap-2">
-        <h6 class="card-title text-muted mb-0">
-          <i class="bi bi-table me-1"></i>Activities
-          <span class="badge bg-secondary ms-1 fw-normal" id="table-count">0</span>
-        </h6>
-        <div class="d-flex align-items-center gap-2 flex-nowrap">
-          <input id="search-input" type="search" class="form-control form-control-sm"
-                 placeholder="Search name…" style="width:180px;flex-shrink:0" />
-          <label for="page-size-select" class="text-muted mb-0 flex-shrink-0" style="font-size:.85rem">Show</label>
-          <select id="page-size-select" class="form-select form-select-sm flex-shrink-0" style="width:auto">
-            <option value="10">10</option>
-            <option value="25" selected>25</option>
-            <option value="50">50</option>
-          </select>
-          <span class="text-muted mb-0 flex-shrink-0" style="font-size:.85rem">entries</span>
-        </div>
+      <!-- Empty state -->
+      <div id="empty-state" class="text-center text-muted py-5 d-none">
+        <i class="bi bi-inbox display-4 d-block mb-3"></i>
+        No activities match the current filters.
       </div>
 
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" id="activity-table">
-          <thead class="table-light">
-            <tr>
-              <th class="sortable" data-col="date">Date <i class="bi bi-chevron-expand sort-icon"></i></th>
-              <th>Name</th>
-              <th class="sortable" data-col="sport">Sport <i class="bi bi-chevron-expand sort-icon"></i></th>
-              <th class="sortable text-end" data-col="distance">Distance <i class="bi bi-chevron-expand sort-icon"></i></th>
-              <th class="sortable text-end" data-col="time">Time <i class="bi bi-chevron-expand sort-icon"></i></th>
-              <th class="sortable text-end" data-col="pace">Pace / Speed <i class="bi bi-chevron-expand sort-icon"></i></th>
-              <th class="sortable text-end" data-col="elevation">Elev Gain <i class="bi bi-chevron-expand sort-icon"></i></th>
-            </tr>
-          </thead>
-          <tbody id="activity-tbody">
-            <tr><td colspan="7" class="text-center text-muted py-4">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
+    </div><!-- /activities -->
 
-      <!-- Pagination bar -->
-      <div class="d-flex align-items-center justify-content-between px-3 py-2 border-top" id="pagination-bar">
-        <div class="text-muted" style="font-size:.85rem" id="pagination-info"></div>
-        <nav aria-label="Activities pagination">
-          <ul class="pagination pagination-sm mb-0" id="pagination-controls"></ul>
-        </nav>
-      </div>
-    </div>
-  </div>
-
-  <!-- Empty state -->
-  <div id="empty-state" class="text-center text-muted py-5 d-none">
-    <i class="bi bi-inbox display-4 d-block mb-3"></i>
-    No activities match the current filters.
-  </div>
-
-</div>
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
 {% endblock %}
 
 {% block scripts %}
