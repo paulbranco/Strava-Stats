@@ -1157,10 +1157,10 @@ function showPage(page) {
   if (!valid.includes(page)) page = 'overview';
   activePage = page;
   history.replaceState(null, '', '#' + page);
-  document.querySelectorAll('[data-page]').forEach(el => {
+  document.querySelectorAll('.page-section').forEach(el => {
     el.classList.toggle('d-none', el.dataset.page !== page);
   });
-  document.querySelectorAll('.sidebar-link').forEach(link => {
+  document.querySelectorAll('.nav-page-link').forEach(link => {
     link.classList.toggle('active', link.dataset.page === page);
   });
   currentPage = 1;
@@ -1316,7 +1316,7 @@ function initAllPills() {
   initPageSize();
   initDateRangeFilter();
 
-  document.querySelectorAll('.sidebar-link').forEach(link => {
+  document.querySelectorAll('.nav-page-link').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
       showPage(link.dataset.page);

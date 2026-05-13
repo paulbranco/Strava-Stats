@@ -39,6 +39,34 @@
       </button>
 
       <div class="collapse navbar-collapse" id="navContent">
+
+        {% if session.get('access_token') %}
+        <!-- Page navigation links -->
+        <ul class="navbar-nav me-4 align-items-lg-center">
+          <li class="nav-item">
+            <a class="nav-link nav-page-link" data-page="overview" href="#overview">
+              <i class="bi bi-grid-1x2-fill me-1"></i>Overview
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-page-link" data-page="trends" href="#trends">
+              <i class="bi bi-bar-chart-line-fill me-1"></i>Trends
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-page-link" data-page="prs" href="#prs">
+              <i class="bi bi-trophy-fill me-1"></i>PRs
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-page-link" data-page="activities" href="#activities">
+              <i class="bi bi-table me-1"></i>All Activities
+            </a>
+          </li>
+        </ul>
+        {% endif %}
+
+        <!-- Right-side controls -->
         <ul class="navbar-nav ms-auto align-items-lg-center gap-2">
 
           {% if session.get('access_token') %}
